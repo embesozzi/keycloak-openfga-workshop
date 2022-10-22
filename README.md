@@ -40,14 +40,14 @@ As an example, we will implement an Product Catalog web application that has the
 * Product can be edited by their Admin
 * Global Admin users can view or edit any Product
 
-More details are described in the [article](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a)
+More details are described in the [article](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a).
 
 ## Getting Started
 
 1. Clone this repository
     ````bash
-    git clone https://github.com/embesozzi/keycloak-openfga-workshops
-    cd keycloak-openfga-workshops
+    git clone https://github.com/embesozzi/keycloak-openfga-workshop
+    cd keycloak-openfga-workshop
     ````
 
 2. Execute following Docker Compose command to start the deployment
@@ -66,7 +66,7 @@ More details are described in the [article](https://embesozzi.medium.com/keycloa
 
     | Component                 |  URI                          |  Username   | Password    |
     | ------------------------- |:-----------------------------:|:-----------:|:-----------:|
-    | Keycloak Admin            |   http://keycloak:8081        |  admin      |  passwords  |
+    | Keycloak Admin            |   http://keycloak:8081        |  admin      |  password  |
     | OpenFGA Playground        |   http://localhost:3000       |             |             |
     | OpenFGA API               |   http://localhost:8080       |             |             |
     | Store Portal              |   http://store:9090           |             |             |
@@ -76,17 +76,17 @@ More details are described in the [article](https://embesozzi.medium.com/keycloa
 ## Post configuration steps
 
 ### OpenFGA
-1. Import the OpenFGA authorization schema for Keycloak just running the following commands:
+1. Import the OpenFGA authorization schema for Keycloak:
 ``` bash
 cd openfga
 ./import.sh
 ```
-2. As the result you will in OpenFGA Playground the following OpenFGA Authorization Model:
+2. As the result you will see the following OpenFGA Authorization Model in the [OpenFGA Playground Console](http://localhost:8080) :
 
 ![openfga-keycloak-authorization-model](doc/images/openfga-authz-model.png)
 
 ### Keycloak
-1. Enable OpenFGA Event listener extension in Keycloak
+1. Enable the Keycloak OpenFGA Event Listener extension in Keycloak:
 
     * Open administration console
     * Choose realm
@@ -98,8 +98,8 @@ cd openfga
     * Open administration console
     * Choose `master` realm
     * Click Clients in the menu -> Create client
-    * Complete the Client ID and Client Name: `portal` with scopes: `openid profile` -> Next -> Save
-    * Complete Access settings: 
+    * Complete the Client ID and Client Name: `portal` -> Next -> Save
+    * Complete in the Access settings: 
         * Valid redirect URIs: `http://store:9090/callback`
         * Web origins: `http://store:9090`
     * Click Save.
@@ -107,6 +107,6 @@ cd openfga
 3. Restart the apps (containers: `store-oidc-app` and `store-openfga-api`)
 
 ## Test cases
-You can follow the test cases described in the article [Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a)
+You can follow the test cases described in the article [Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a).
 
 In the article you will see an example of the keycloak Role and Group model and how the API is protecting the services based on the OpenFGA authorization model.
