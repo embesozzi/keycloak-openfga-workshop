@@ -1,0 +1,56 @@
+
+{  "type_definitions": [
+    {
+      "type": "role",
+      "relations": {
+        "assignee": {
+          "union": {
+            "child": [
+              {
+                "this": {}
+              },
+              {
+                "tupleToUserset": {
+                  "tupleset": {
+                    "object": "",
+                    "relation": "parent"
+                  },
+                  "computedUserset": {
+                    "object": "",
+                    "relation": "assignee"
+                  }
+                }
+              },
+              {
+                "tupleToUserset": {
+                  "tupleset": {
+                    "object": "",
+                    "relation": "parent_group"
+                  },
+                  "computedUserset": {
+                    "object": "",
+                    "relation": "assignee"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "parent": {
+          "this": {}
+        },
+        "parent_group": {
+          "this": {}
+        }
+      }
+    },
+    {
+      "type": "group",
+      "relations": {
+        "assignee": {
+          "this": {}
+        }
+      }
+    }
+  ]
+}

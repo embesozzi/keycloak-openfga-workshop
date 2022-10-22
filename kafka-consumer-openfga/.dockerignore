@@ -1,0 +1,7 @@
+# Ignore all files by default.
+*
+
+# White list only the required files and folders.
+!package.json
+!package-lock.json
+!src/consumer.js

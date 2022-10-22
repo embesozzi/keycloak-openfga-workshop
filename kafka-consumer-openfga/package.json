@@ -1,0 +1,16 @@
+{
+  "name": "kafka-consumer-openfga",
+  "version": "1.0.0",
+  "description": "An OpenFGA kafka consumer that publishes tuples to OpenFGA solution.",
+  "author": "Martin Besozzi <embesozzi@gmail.com>)",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "node consumer.js"
+  },
+  "dependencies": {
+    "avsc": "5.3.1",
+    "@openfga/sdk": "^0.0.2",
+    "kafkajs": "^2.2.0"
+  }
+}

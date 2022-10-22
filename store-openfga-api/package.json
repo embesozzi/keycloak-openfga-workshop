@@ -1,0 +1,20 @@
+{
+    "name": "store-openfga-api",
+    "description": "An OAuth 2.0 API protected by OpenFGA for fine-grained autorization.",
+    "author": "Martin Besozzi <embesozzi@gmail.com>)",
+    "license": "MIT",
+    "main": "server.js",
+    "scripts": {
+        "start": "nodemon server.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "dependencies": {
+        "body-parser": "^1.19.0",
+        "cors": "^2.8.5",
+        "express": "^4.17.1",
+        "express-jwt": "^6.0.0",
+        "jwks-rsa": "^1.6.0",
+        "nodemon": "^2.0.6",
+        "@openfga/sdk": "^0.0.2"
+    }
+}
