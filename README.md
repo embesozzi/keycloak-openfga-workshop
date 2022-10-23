@@ -17,7 +17,7 @@ The PoC uses a Keycloak custom extension [keycloak-openfga-event-listener](https
    * User Group Assignment
    * Role to Role Assignment 
    * User Group Assignment 
-2. translates this event to an OpenFGA tuple
+2. translates this event to an OpenFGA tuple based on the [OpenFGA Keycloak Authz Schema](openfga/keycloak-authorization-model.json)
 3. publishes the event to the OpenFGA Solution (*)
 
 (*) So far we don’t have an official Java SDK OpenFGA client to publish the authorization tuples. This is why I have decided to use an Apache Kafka cluster for publishing the events. Kafka is a messaging system that safely moves data between systems. These events will be consumed by a Kafka consumer client (B) that using the OpenFGA SDK will publish the tuples to the OpenFGA Solution.
@@ -36,14 +36,14 @@ More details are described in the [article](https://embesozzi.medium.com/keycloa
 
 In this repo you will see the following components running as containers in two docker-compose files:
 
-* Core 
-    * Keycloak is configured with Custom extension Keycloak OpenFGA Event Listener to send the events to a Kafka Cluster (Point A)
-    * OpenFGA is configured with the Keycloak Authorization Model in the store called "keycloak" (Point C)
-    * Kakfa Cluster for handling the events
-    * Kafka consumer `kafka-consumer-openfga` was configured to send the events to the OpenFGA solution with the SDK (Point B)
-* Apps:
-    * Product catalog web application `oidc-store-app` is integrated with Keycloak to authenticate the users
-    * API product catalog `oidc-openfga-api` is protected by OAuth and it utilizes the OpenFGA SDK to enforce relationship-based access control (ReBAC)
+| Component                 |  Description                  |  Image         | 
+| ------------------------- |-----------------------------|:--------------:|
+| Keycloak                  |   Keycloak is configured with Custom extension Keycloak OpenFGA Event Listener |  quay.io/keycloak/keycloak:19.0.2 |      
+| OpenFGA                   |   OpenFGA is configured with Keycloak Authz Schema   |     openfga/openfga:latest        | 
+| Kakfa Cluster             |   Single Node Kakfa Cluster  |   confluentinc/cp-zookeeper:7.2.2, confluentinc/cp-kafka:7.2.2|
+| Kafka OpenFGA Consumer    |   Node.js Kafka OpenFGA Consumer is configured to send the events to the OpenFGA  |     Custom local build          | 
+| Store Portal              |   Vue.js Web Application is integrated with Keycloak by OpenID Connect          |   Custom local build           |
+| Store API                 |   Node.js API is protected by OAuth 2.0 and it utilizes the OpenFGA SDK for FGA.      |    Custom local build       |
 
 
 # How to install?
@@ -75,7 +75,7 @@ In this repo you will see the following components running as containers in two 
 
     | Component                 |  URI                          |  Username   | Password    |
     | ------------------------- |:-----------------------------:|:-----------:|:-----------:|
-    | Keycloak Admin            |   http://keycloak:8081        |  admin      |  password  |
+    | Keycloak Consol           |   http://keycloak:8081        |  admin      |  password  |
     | OpenFGA Playground        |   http://localhost:3000       |             |             |
     | OpenFGA API               |   http://localhost:8080       |             |             |
     | Store Portal              |   http://store:9090           |             |             |
@@ -86,7 +86,7 @@ In this repo you will see the following components running as containers in two 
 
 ### OpenFGA
 1. Import the OpenFGA authorization schema for Keycloak:
-    ``` bash
+    ```bash
     cd openfga
     ./import.sh
     ```
@@ -105,9 +105,9 @@ In this repo you will see the following components running as containers in two 
 
 2. Proceed to initialize the PoC:
 
-In order to simply the PoC configuration, proceed to execute the following script to initialize the PoC:
+    In order to simply the PoC configuration, proceed to execute the following script to initialize the PoC:
 
-    ``` bash
+    ```bash
     docker exec keycloak /bin/bash /opt/keycloak/initialize-poc.sh
     ```
 

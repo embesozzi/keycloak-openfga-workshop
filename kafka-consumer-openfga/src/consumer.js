@@ -3,8 +3,13 @@ const { OpenFgaApi } = require('@openfga/sdk');
 
 const kafka = new Kafka({
   logLevel: logLevel.INFO,
-  brokers: ['kafka:19092'],
-  clientId: 'example-consumer',
+  brokers: process.env.OPENFGA_KAFKA_BROKERS || ['kafka:19092'],
+  clientId: process.env.OPENFGA_KAFKA_CLIENT_ID || 'example-consumer',
+  retry: {
+    initialRetryTime: 500,
+    retries: 20,
+    maxRetryTime: 50000
+  }
 })
 
 const openFga = new OpenFgaApi({
@@ -12,7 +17,7 @@ const openFga = new OpenFgaApi({
   apiHost: process.env.OPENFGA_API_HOST || "openfga:8080"
 });
 
-const topicsArray = ['openfga-topic']
+const topicsArray = process.env.OPENFGA_KAKFA_TOPIC || ['openfga-topic']
 const consumer = kafka.consumer({ groupId: 'test-group' })
 
 
