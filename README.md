@@ -3,48 +3,30 @@ This repository contains a PoC implemented with [Keycloak](https://www.keycloak.
 
 This workshop is based the following article [Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a). You will find there full details about the authorization architecture guidelines and involved components.
 
-Nevertheless, here is the overview of the components:
+
+## Authorization Framework
+
+The following diagram illustrates the solution architecture of this workshop:
 
 ![solution-architecture](doc/images/solution-architecture.png)
 
-Keycloak (A) is responsible for handling the authentication with the standard OpenID Connect and is managing the user access with his Role Model.
+* Core:
 
-OpenFGA (C) is responsible for applying fine-grained access control. The OpenFGA service answers authorization checks by determining whether a relationship exists between an object and a user.
+    * Keycloak (A) is responsible for handling the authentication with the standard OpenID Connect and is managing the user access with his Role Model
 
-The PoC uses a Keycloak custom extension [keycloak-openfga-event-listener](https://github.com/embesozzi/keycloak-openfga-event-listener) which:
-1. listens to the Keycloak events: 
-   * User Role Assignment
-   * User Group Assignment
-   * Role to Role Assignment 
-   * User Group Assignment 
-2. translates this event to an OpenFGA tuple based on the [OpenFGA Keycloak Authz Schema](openfga/keycloak-authorization-model.json)
-3. publishes the event to the OpenFGA Solution (*)
+    * Keycloak is configure with a custom extension (B) [keycloak-openfga-event-listener](https://github.com/embesozzi/keycloak-openfga-event-listener) which listens to the Keycloak events (User Role Assignment, Role to Role Assignment, etc), parses this event into an OpenFGA tuple based on the [Keycloak Authz Schema](openfga/keycloak-authorization-model.json) and publishes the event to Kakfa Cluster (C)
 
-(*) So far we don’t have an official Java SDK OpenFGA client to publish the authorization tuples. This is why I have decided to use an Apache Kafka cluster for publishing the events. Kafka is a messaging system that safely moves data between systems. These events will be consumed by a Kafka consumer client (B) that using the OpenFGA SDK will publish the tuples to the OpenFGA Solution.
+    * Kakfa OpenFGA Consumer (D) that using the OpenFGA SDK will publish the tuples to the OpenFGA Solution
 
-Then the application or API (4/5) can do an authorization check invoking the OpenFGA service.
+    * OpenFGA (E) is responsible for applying fine-grained access control. The OpenFGA service answers authorization checks by determining whether a relationship exists between an object and a user
 
-# Use Case Overview
+* Other components
 
-As an example, we will implement an Product Catalog web application that has the following requirements:
-* Only authenticated user with MFA can access to the application
-* Product can be viewed by their Analyst
-* Product can be edited by their Admin
-* Global Admin users can view or edit any Product
+    * Store Web Application is integrated with Keycloak by OpenID Connect
 
-More details are described in the [article](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a).
+    * Store API is protected by OAuth 2.0 and it utilizes the OpenFGA SDK for FGA
 
-In this repo you will see the following components running as containers in two docker-compose files:
-
-| Component                 |  Description                |  Image         | 
-| ------------------------- |-----------------------------|:--------------:|
-| Keycloak                  |   Keycloak is configured with Custom extension Keycloak OpenFGA Event Listener    |  quay.io/keycloak/keycloak:19.0.2 |      
-| OpenFGA                   |   OpenFGA is configured with Keycloak Authz Schema                                |     openfga/openfga:latest        | 
-| Kakfa Cluster             |   Single Node Kakfa Cluster                                                       |   confluentinc/cp-zookeeper:7.2.2<br />confluentinc/cp-kafka:7.2.2|
-| Kafka OpenFGA Consumer    |   Node.js Kafka OpenFGA Consumer is configured to send the events to the OpenFGA  |    Custom image                   | 
-| Store Portal              |   Vue.js Web Application is integrated with Keycloak by OpenID Connect            |    Custom image                   |
-| Store API                 |   Node.js API is protected by OAuth 2.0 and it utilizes the OpenFGA SDK for FGA.  |    Custom image                   |
-
+So far we don’t have an official Java SDK OpenFGA client to publish the authorization tuples. This is why I decided to use an Apache Kafka cluster for managing the events. Nevertheless, the extension is prepared for the future to use an http client for publishing the events.
 
 # How to install?
 ## Prerequisites
@@ -73,13 +55,13 @@ In this repo you will see the following components running as containers in two 
 
 4. Access the following web UIs using URLs bellow via a web browser.
 
-    | Component                 |  URI                          |  Username   | Password    |
-    | ------------------------- |:-----------------------------:|:-----------:|:-----------:|
-    | Keycloak Consol           |   http://keycloak:8081        |  admin      |  password   |
-    | OpenFGA Playground        |   http://localhost:3000       |             |             |
-    | OpenFGA API               |   http://localhost:8080       |             |             |
-    | Store Portal              |   http://store:9090           |             |             |
-    | Store API                 |   http://store-api:9091       |             |             |
+    | Component                 |  URI                          |  Username   | Password    |  Image     |
+    | ------------------------- |:-----------------------------:|:-----------:|:-----------:|:-----------:
+    | Keycloak Console          |   http://keycloak:8081        |  admin      |  password   | quay.io/keycloak/keycloak:19.0.2 |
+    | OpenFGA Playground        |   http://localhost:3000       |             |             | openfga/openfga:latest           | 
+    | OpenFGA API               |   http://localhost:8080       |             |             | confluentinc/cp-zookeeper:7.2.2<br />confluentinc/cp-kafka:7.2.2|
+    | Store Portal              |   http://store:9090           |             |             | Custom image                   |
+    | Store API                 |   http://store-api:9091       |             |             | Custom image                   |
 
 
 ## Post configuration steps
@@ -105,7 +87,7 @@ In this repo you will see the following components running as containers in two 
 
 2. Proceed to initialize the PoC:
 
-    In order to simply the PoC configuration, proceed to execute the following script to initialize the PoC:
+    Execute the following script to initialize the PoC:
 
     ```bash
     docker exec keycloak /bin/bash /opt/keycloak/initialize-poc.sh
@@ -133,6 +115,10 @@ In this repo you will see the following components running as containers in two 
 3. Restart the apps (containers: `store-oidc-app` and `store-openfga-api`)
 
 ## Test cases
-You can follow the test cases described in the article [Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a).
+As an example, we will implement an Product Catalog web application that has the following requirements:
+* Only authenticated user with MFA can access to the application
+* Product can be viewed by their Analyst
+* Product can be edited by their Admin
+* Global Admin users can view or edit any Product
 
-In the article you will see an example of the keycloak Role and Group model and how the API is protecting the services based on the OpenFGA authorization model.
+You can follow the test cases described in the [Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a).
