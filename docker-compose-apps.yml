@@ -3,7 +3,7 @@ version: '3.8'
 services:
   store:
     build: ./store-oidc-app
-    image: local/store-oidc-app
+    image: embesozzi/store-oidc-app
     container_name: store-oidc-app
     ports:
       - "9090:8080"
@@ -13,7 +13,7 @@ services:
       VUE_APP_CLIENT_ID: portal
   store-api:
     build: ./store-openfga-api
-    image: local/store-openfga-api
+    image: embesozzi/store-openfga-api
     container_name: store-openfga-api
     ports:
       - "9091:8000"

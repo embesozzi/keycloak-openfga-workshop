@@ -5,6 +5,9 @@ volumes:
     driver: local
 
 services:
+  #
+  # Keycloak IAM 
+  #
   keycloak-postgres:
     image: postgres:11
     container_name: keycloak-postgres
@@ -18,7 +21,7 @@ services:
       - 5433:5432
   keycloak:
     build: ./keycloak
-    image: local/keycloak
+    image: embesozzi/keycloak
     container_name: keycloak
     environment:
       KEYCLOAK_USER: admin
@@ -34,7 +37,7 @@ services:
       KC_HTTP_ENABLED: 'true'
       KC_HOSTNAME_ADMIN: keycloak
       KC_HOSTNAME: keycloak
-##    OpenFGA Event Listener SPI configuration      
+      # Keycloak OpenFGA Event Listener SPI configuration      
       KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_SERVICE_HANDLER_NAME: KAFKA
       KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_CLIENT_ID: keycloak-producer
       KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_ADMIN_TOPIC: openfga-topic
@@ -49,7 +52,9 @@ services:
       default:
         aliases:
           - keycloak
-
+  #
+  # Kakfa Cluster
+  #
   zookeeper:
     image: confluentinc/cp-zookeeper:7.2.2
     hostname: zookeeper
@@ -59,7 +64,6 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_SERVER_ID: 1
-
   kafka:
     image: confluentinc/cp-kafka:7.2.2
     hostname: kafka
@@ -81,6 +85,9 @@ services:
       KAFKA_ADVERTISED_HOST_NAME: kafka
     depends_on:
       - zookeeper
+  #
+  # OpenFGA
+  #  
   postgres:
     image: postgres:14
     container_name: postgres
@@ -96,7 +103,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
   migrate:
     depends_on:
       postgres:
@@ -106,7 +112,6 @@ services:
     command: migrate --datastore-engine postgres --datastore-uri 'postgres://postgres:password@postgres:5432/postgres?sslmode=disable'
     networks:
       - default
-
   openfga:
     depends_on:
       migrate:
@@ -119,10 +124,12 @@ services:
     ports:
       - "8080:8080"
       - "3000:3000"    
-  
+  #
+  # Kafka OpenFGA Consumer
+  # 
   kafka-consumer-openfga:
     build: ./kafka-consumer-openfga
-    image: local/kafka-consumer-openfga
+    image: embesozzi/kafka-consumer-openfga
     container_name: kafka-consumer-openfga
     depends_on:
       - zookeeper

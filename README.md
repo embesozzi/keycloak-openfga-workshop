@@ -7,9 +7,9 @@ Nevertheless, here is the overview of the components:
 
 ![solution-architecture](doc/images/solution-architecture.png)
 
-(A) Keycloak is responsible for handling the authentication with the standard OpenID Connect and is managing the user access with his Role Model.
+Keycloak (A) is responsible for handling the authentication with the standard OpenID Connect and is managing the user access with his Role Model.
 
-(C) OpenFGA is responsible for applying fine-grained access control. The OpenFGA service answers authorization checks by determining whether a relationship exists between an object and a user.
+OpenFGA (C) is responsible for applying fine-grained access control. The OpenFGA service answers authorization checks by determining whether a relationship exists between an object and a user.
 
 The PoC uses a Keycloak custom extension [keycloak-openfga-event-listener](https://github.com/embesozzi/keycloak-openfga-event-listener) which:
 1. listens to the Keycloak events: 
@@ -36,14 +36,14 @@ More details are described in the [article](https://embesozzi.medium.com/keycloa
 
 In this repo you will see the following components running as containers in two docker-compose files:
 
-| Component                 |  Description                  |  Image         | 
+| Component                 |  Description                |  Image         | 
 | ------------------------- |-----------------------------|:--------------:|
-| Keycloak                  |   Keycloak is configured with Custom extension Keycloak OpenFGA Event Listener |  quay.io/keycloak/keycloak:19.0.2 |      
-| OpenFGA                   |   OpenFGA is configured with Keycloak Authz Schema   |     openfga/openfga:latest        | 
-| Kakfa Cluster             |   Single Node Kakfa Cluster  |   confluentinc/cp-zookeeper:7.2.2, confluentinc/cp-kafka:7.2.2|
-| Kafka OpenFGA Consumer    |   Node.js Kafka OpenFGA Consumer is configured to send the events to the OpenFGA  |     Custom local build          | 
-| Store Portal              |   Vue.js Web Application is integrated with Keycloak by OpenID Connect          |   Custom local build           |
-| Store API                 |   Node.js API is protected by OAuth 2.0 and it utilizes the OpenFGA SDK for FGA.      |    Custom local build       |
+| Keycloak                  |   Keycloak is configured with Custom extension Keycloak OpenFGA Event Listener    |  quay.io/keycloak/keycloak:19.0.2 |      
+| OpenFGA                   |   OpenFGA is configured with Keycloak Authz Schema                                |     openfga/openfga:latest        | 
+| Kakfa Cluster             |   Single Node Kakfa Cluster                                                       |   confluentinc/cp-zookeeper:7.2.2<br />confluentinc/cp-kafka:7.2.2|
+| Kafka OpenFGA Consumer    |   Node.js Kafka OpenFGA Consumer is configured to send the events to the OpenFGA  |    Custom image                   | 
+| Store Portal              |   Vue.js Web Application is integrated with Keycloak by OpenID Connect            |    Custom image                   |
+| Store API                 |   Node.js API is protected by OAuth 2.0 and it utilizes the OpenFGA SDK for FGA.  |    Custom image                   |
 
 
 # How to install?
@@ -75,7 +75,7 @@ In this repo you will see the following components running as containers in two 
 
     | Component                 |  URI                          |  Username   | Password    |
     | ------------------------- |:-----------------------------:|:-----------:|:-----------:|
-    | Keycloak Consol           |   http://keycloak:8081        |  admin      |  password  |
+    | Keycloak Consol           |   http://keycloak:8081        |  admin      |  password   |
     | OpenFGA Playground        |   http://localhost:3000       |             |             |
     | OpenFGA API               |   http://localhost:8080       |             |             |
     | Store Portal              |   http://store:9090           |             |             |
@@ -92,7 +92,7 @@ In this repo you will see the following components running as containers in two 
     ```
 2. As the result you will see the following OpenFGA Authorization Model in the [OpenFGA Playground Console](http://localhost:8080) :
 
-![openfga-keycloak-authorization-model](doc/images/openfga-authz-model.png)
+    ![openfga-keycloak-authorization-model](doc/images/openfga-authz-model.png)
 
 ### Keycloak
 1. Enable the Keycloak OpenFGA Event Listener extension in Keycloak:
@@ -111,23 +111,23 @@ In this repo you will see the following components running as containers in two 
     docker exec keycloak /bin/bash /opt/keycloak/initialize-poc.sh
     ```
 
-This script will create the OAuth Clients and the following Users and Role Model:
+    This script will create the OAuth Clients and the following Users and Role Model:
 
-![users](doc/images/users.png)
+    ![users](doc/images/users.png)
 
-The password for all the users is `demo1234!`
+    The password for all the users is `demo1234!`
 
-Once these steps are finished, the Keycloak OpenFGA Event Listener extension has to proceed to publish these events to the Kafka topic called “openfga-topic”. Then, the Kafka consumer has published those events to the OpenGFA store using the SDK. Here are all tuples stored.
+    Once these steps are finished, the Keycloak OpenFGA Event Listener extension has to proceed to publish these events to the Kafka topic called “openfga-topic”. Then, the Kafka consumer has published those events to the OpenGFA store using the SDK. Here are all tuples stored.
 
-| User                      |  Relation                     |  Object               | 
-| ------------------------- |:-----------------------------:|:---------------------:|
-| role:admin-catalog        |   parent                      |  role:view-product    |
-| group:global-admin        |   parent_group                |  role:admin-catalog   |
-| role:analyst-catalog      |   parent                      |  role:view-product    |
-| role:admin-catalog        |   parent                      |  role:view-product    |
-| role:admin-catalog        |   parent                      |  role:edit-product    |
-| paula                     |   assignee                    |  role:analyst-catalog |
-| richard                   |   assignee                    |  role:admin-catalog   |
+    | User                      |  Relation                     |  Object               | 
+    | ------------------------- |:-----------------------------:|:---------------------:|
+    | role:admin-catalog        |   parent                      |  role:view-product    |
+    | group:global-admin        |   parent_group                |  role:admin-catalog   |
+    | role:analyst-catalog      |   parent                      |  role:view-product    |
+    | role:admin-catalog        |   parent                      |  role:view-product    |
+    | role:admin-catalog        |   parent                      |  role:edit-product    |
+    | paula                     |   assignee                    |  role:analyst-catalog |
+    | richard                   |   assignee                    |  role:admin-catalog   |
 
 
 3. Restart the apps (containers: `store-oidc-app` and `store-openfga-api`)
