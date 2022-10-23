@@ -27,4 +27,4 @@ echo "Creating PoC Users, Role Model, User Role Assigments and Clients"
 
 
 # Clients
-/opt/keycloak/bin/kcadm.sh create clients -r master -s clientId=portal -s publicClient=true -s 'redirectUris=["http://store:8080/callback"]' -s 'webOrigins=["http://store:8080"]' -o
+/opt/keycloak/bin/kcadm.sh create clients -r master -s clientId=portal -s publicClient=true -s 'redirectUris=["http://store:9090/callback"]' -s 'webOrigins=["http://store:9090"]' -o
