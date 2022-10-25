@@ -8,7 +8,9 @@ This workshop is based the following article [Keycloak integration with OpenFGA 
 
 The following diagram illustrates the solution architecture of this workshop:
 
-![solution-architecture](doc/images/solution-architecture.png)
+<p align="center">
+  <img width="70%" height="70%" src="doc/images/solution-architecture.png">
+</p>
 
 * Core:
 
@@ -67,7 +69,7 @@ So far we don’t have an official Java SDK OpenFGA client to publish the author
 ## Post configuration steps
 
 ### OpenFGA
-1. Import the OpenFGA authorization schema for Keycloak:
+1. Import the [OpenFGA authorization schema for Keycloak](openfga/keycloak-authorization-model.json):
     ```bash
     cd openfga
     ./import.sh
@@ -79,15 +81,16 @@ So far we don’t have an official Java SDK OpenFGA client to publish the author
 ### Keycloak
 1. Enable the Keycloak OpenFGA Event Listener extension in Keycloak:
 
-    * Open administration console
+    * Open [administration console](http://keycloak:8081)
     * Choose realm
-    * Go to Events
-    * Open `Config` tab and add `openfga-events` to Event Listeners.
+    * Realm settings
+    * Select `Events` tab and add `openfga-events` to Event Listeners.
 
+    <img src="doc/images/kc-admin-events.png" width="80%" height="80%">
 
 2. Proceed to initialize the PoC:
 
-    Execute the following script to initialize the PoC:
+    Execute the following [script](keycloak/initialize-poc.sh) to initialize the PoC:
 
     ```bash
     docker exec keycloak /bin/bash /opt/keycloak/initialize-poc.sh

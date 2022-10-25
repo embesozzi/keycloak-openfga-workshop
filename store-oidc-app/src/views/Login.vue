@@ -3,6 +3,7 @@
       <v-app-bar
           app
           dark
+          color="blue"
           elevation="4"
         >
         <v-toolbar-title><span class="title ml-3 mr-5">Best&nbsp;<span class="font-weight-light">eMarket</span></span></v-toolbar-title>
@@ -16,9 +17,9 @@
       fluid>
       <v-row class="fill-height">
         <v-img
-            :src="`login.jpg`"
+            :src="`login.png`"
             :aspect-ratio="16/9"
-            :width="width"
+            :width="`100`"
           ></v-img>
       </v-row>   
       <!--

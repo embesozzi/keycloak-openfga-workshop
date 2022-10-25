@@ -3,6 +3,9 @@
     <v-app-bar
         app
         dark
+        color="blue"
+        elevation="6"
+        flat
         clipped-left
       >
         <v-app-bar-nav-icon></v-app-bar-nav-icon>

@@ -4,6 +4,9 @@
     <v-app-bar
       app
       dark
+      color="blue"
+      elevation="6"
+      flat
       clipped-left
     >
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
@@ -14,21 +17,20 @@
         hide-details
         label="Search"
       ></v-text-field>
-      <v-btn icon @click="request" v-if="content=='products'">
+      <v-btn icon @click="request" v-if="page=='products'">
         <v-icon>mdi-refresh</v-icon>
       </v-btn>
       <v-spacer></v-spacer>
-        <v-btn icon @click="content='products'">
-          <v-icon>mdi-home</v-icon>
-        </v-btn>
-        <v-btn icon @click="content='tokens'">
-          <v-icon>mdi-account</v-icon>
-       </v-btn>
-       <v-btn icon @click="content='settings'">
-          <v-icon>mdi-cog</v-icon>
-       </v-btn>
-
-      <span v-if="response && response.profile">
+      <v-btn icon @click="page='products'">
+        <v-icon>mdi-home</v-icon>
+      </v-btn>
+      <v-btn icon @click="page='tokens'">
+        <v-icon>mdi-account</v-icon>
+      </v-btn>
+      <v-btn icon @click="page='settings'">
+        <v-icon>mdi-cog</v-icon>
+      </v-btn>
+       <span v-if="response && response.profile">
         <v-icon
           color="grey lighten-3"
           large
@@ -37,15 +39,27 @@
         </v-icon> 
         {{response.profile.name}}
       </span>
+       <v-btn icon @click="logout()">
+          <v-icon>mdi-logout</v-icon>
+       </v-btn>
     </v-app-bar>
     <v-main class="grey lighten-4">
       <v-progress-linear v-if="service.loading" :indeterminate="true" />
+      <v-alert v-if="this.error.show"
+				color="red"
+				dense
+				dismissible
+				elevation="8"
+				prominent
+				text
+				type="error"
+			>{{this.error.detail}}</v-alert>
       <v-container
         fluid
         class="grey lighten-4"
       >
         <!-- Products page content -->
-        <v-row v-if="content=='products'"
+        <v-row v-if="page=='products' && !this.error.show"
           justify="center"
           align="center"
         >
@@ -100,7 +114,7 @@
         </v-col>
         </v-row>
         <!-- Token page content -->
-        <v-row v-if="content=='tokens'">
+        <v-row v-if="page=='tokens'">
           <v-expansion-panels popout>
             <v-expansion-panel>
               <v-expansion-panel-header>ID Token</v-expansion-panel-header>
@@ -129,7 +143,7 @@
           </v-expansion-panels>
         </v-row>
         <!-- Setting page content -->
-        <v-row v-if="content=='settings'">
+        <v-row v-if="page=='settings'">
             <v-col cols="12" sm="12">
               <v-text-field
                 v-model="service.url"
@@ -151,13 +165,30 @@ export default {
   name: 'User',
   data: () => ({
     results: null,
-    content : "products", // Default page
+    page : "products", // Default page
     service : {
       url : process.env.VUE_APP_API_URL || "/api/products",
       loading : false
     },
+    error: {
+			show : false,
+			detail : null,
+			errorCodes : {
+				401 : "Your are not authorized to access to this resourced. (Error: Code 401)",
+				403 : "Access forbidden. You are not allowed to access this resource. (Error: Code 403) ",
+        404 : "Service not Found. (Error: Code 404)"
+			}
+		},
     drawer: null
   }),
+  watch: {
+    page: function (pageName) {
+      this.error.show = false;
+      if(pageName=="products"){
+				this.request();
+			}
+    }
+  },    
   computed: {
     ...mapGetters({
         accessToken : 'auth/accessToken',
@@ -167,7 +198,8 @@ export default {
   methods: {
     request : function() 
     {
-        this.service.loading = true;        
+        this.service.loading = true;
+        this.error.show = false;        
         // this.results = this.mockProducts;
         // this.service.loading = false;
         let authHeader = { headers: { Authorization: 'Bearer ' + this.accessToken } };
@@ -177,6 +209,11 @@ export default {
           console.log(this.results)
         }).catch( error => { 
           console.log(error); 
+          this.error.show =true;
+          if(error.response){
+            this.error.detail = this.error.errorCodes[error.response.status];
+          }
+          this.error.detail = this.error.detail  || "We received a server error"
           this.service.loading = false;
         });
     },
@@ -187,6 +224,9 @@ export default {
   },
   created() {
     this.request();
-  }
+  },
+  logout : function () {
+			this.$store.dispatch("auth/signOut");
+	}
 }
 </script>
