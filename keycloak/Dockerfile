@@ -1,9 +1,10 @@
 FROM quay.io/keycloak/keycloak:19.0.2 as builder
+LABEL maintainer="embesozzi@gmail.com"
 
 ENV KC_DB=postgres
 ENV KC_HTTP_RELATIVE_PATH=/auth
 
-COPY ./lib/keycloak-openfga-event-listener-1.0.0.jar /opt/keycloak/providers/keycloak-openfga-event-listener-1.0.0.jar
+COPY ./lib/keycloak-openfga-event-listener-1.0.1.jar /opt/keycloak/providers/keycloak-openfga-event-listener-1.0.1.jar
 COPY ./initialize-poc.sh /opt/keycloak/initialize-poc.sh
 RUN /opt/keycloak/bin/kc.sh build
 
