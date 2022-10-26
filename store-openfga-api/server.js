@@ -56,6 +56,14 @@ const userHasRole = async (user,roleName) => {
 const userHasTuple = async function (user, relationship, object) {
     console.log("[Store API] Check user: " + user + " rel: " + relationship + " obj: " + object);
     try {
+        if(!fgaClient.storeId){
+          console.log("[Kafka Consumer OpenFGA] Upps OpenFGA is not initialized properly...");
+          await getOpenFGAStore();
+          if(!fgaClient.storeId){
+            throw new Error('Upps OpenFGA is not initialized properly :(')
+          }
+        }
+      
         let { allowed } = await fgaClient.check({
             tuple_key: {
                 user: user,
