@@ -23,7 +23,7 @@ echo "Creating PoC Users, Role Model, User Role Assigments and Clients"
 
 # User Role Assignments
 /opt/keycloak/bin/kcadm.sh add-roles -r master --uusername paula --rolename analyst-catalog
-/opt/keycloak/bin/kcadm.sh add-roles -r master --uusername peter --rolename admin-catalog
+/opt/keycloak/bin/kcadm.sh add-roles -r master --uusername richard --rolename admin-catalog
 
 
 # Clients
