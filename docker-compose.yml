@@ -37,12 +37,18 @@ services:
       KC_HTTP_ENABLED: 'true'
       KC_HOSTNAME_ADMIN: keycloak
       KC_HOSTNAME: keycloak
+      KC_HEALTH_ENABLED: 'true'
       # Keycloak OpenFGA Event Listener SPI configuration      
       KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_SERVICE_HANDLER_NAME: KAFKA
       KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_CLIENT_ID: keycloak-producer
       KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_ADMIN_TOPIC: openfga-topic
       KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:19092
       KC_LOG_LEVEL: INFO,io.embesozzi.keycloak:debug
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 5s
+      timeout: 2s
+      retries: 15  
     ports:
       - 8081:8080
       - 8443:8443
@@ -85,6 +91,12 @@ services:
       KAFKA_ADVERTISED_HOST_NAME: kafka
     depends_on:
       - zookeeper
+    healthcheck:
+      test: nc -z localhost 19092 || exit -1
+      start_period: 15s
+      interval: 5s
+      timeout: 10s
+      retries: 10  
   #
   # OpenFGA
   #  
@@ -132,8 +144,7 @@ services:
     image: embesozzi/kafka-consumer-openfga
     container_name: kafka-consumer-openfga
     depends_on:
-      - zookeeper
-      - kafka
-      - openfga
+      kafka:
+        condition: service_healthy
     environment:
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181       
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181

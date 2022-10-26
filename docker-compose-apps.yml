@@ -11,10 +11,16 @@ services:
       VUE_APP_OIDC_PROVIDER_DOMAIN: http://keycloak:8081/realms/master
       VUE_APP_API_URL: http://store-api:9091/api/products
       VUE_APP_CLIENT_ID: portal
+    depends_on:
+      keycloak:
+        condition: service_healthy  
   store-api:
     build: ./store-openfga-api
     image: embesozzi/store-openfga-api
     container_name: store-openfga-api
+    depends_on:
+      keycloak:
+        condition: service_healthy  
     ports:
       - "9091:8000"
     environment: 
