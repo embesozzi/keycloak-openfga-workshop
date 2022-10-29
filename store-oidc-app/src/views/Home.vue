@@ -45,28 +45,28 @@
     </v-app-bar>
     <v-main class="grey lighten-4">
       <v-progress-linear v-if="service.loading" :indeterminate="true" />
-      <v-alert v-if="this.error.show"
-				color="red"
+      <v-alert v-if="this.alert.show"
+				:color="this.alert.type=='error'?'red':'green'"
 				dense
 				dismissible
 				elevation="8"
 				prominent
 				text
-				type="error"
-			>{{this.error.detail}}</v-alert>
+				:type=this.alert.type
+			>{{this.alert.detail}}</v-alert>
       <v-container
         fluid
         class="grey lighten-4"
       >
         <!-- Products page content -->
-        <v-row v-if="page=='products' && !this.error.show"
+        <v-row v-if="page=='products'"
           justify="center"
           align="center"
         >
            <v-col
             v-for="result in results"
-            :key="result.title"
-            cols="3"
+            :key="result.id"
+            cols="2"
           >
           <v-card>
             <v-img
@@ -99,17 +99,32 @@
               </v-row>
             </v-card-text>
             <v-card-actions>
-               <v-btn text>Details</v-btn>
-                <v-btn
-                  text
-                >
-                  Buy
-                </v-btn>
-              <v-spacer></v-spacer>
-              <v-btn icon>
-                <v-icon>mdi-share-variant</v-icon>
+              <v-btn
+                color="blue lighten-2"
+                :disabled="result.status=='published'"
+                @click="publish(result.id)"
+                text
+              >
+                {{result.status}}
               </v-btn>
-            </v-card-actions>
+              <v-spacer></v-spacer>
+
+              <v-btn
+                icon
+                @click.stop="result.show = !result.show"
+              >
+                <v-icon>{{ showCard ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+              </v-btn>
+          </v-card-actions>
+          <v-expand-transition>
+            <div v-show="result.show">
+              <v-divider></v-divider>
+
+              <v-card-text>
+                <span v-html="result.details"></span>
+              </v-card-text>
+            </div>
+          </v-expand-transition> 
           </v-card>
         </v-col>
         </v-row>
@@ -164,18 +179,20 @@ import axios from 'axios'
 export default {
   name: 'User',
   data: () => ({
+    showCard: false,
     results: null,
     page : "products", // Default page
     service : {
-      url : process.env.VUE_APP_API_URL || "/api/products",
+      url : process.env.VUE_APP_API_URL || "http://localhost:8000/api/products",
       loading : false
     },
-    error: {
+    alert: {
+      type: "error",
 			show : false,
 			detail : null,
 			errorCodes : {
 				401 : "Your are not authorized to access to this resourced. (Error: Code 401)",
-				403 : "Access forbidden. You are not allowed to access this resource. (Error: Code 403) ",
+				403 : "Access forbidden. (Error: Code 403) ",
         404 : "Service not Found. (Error: Code 404)"
 			}
 		},
@@ -183,7 +200,7 @@ export default {
   }),
   watch: {
     page: function (pageName) {
-      this.error.show = false;
+      this.alert.show = false;
       if(pageName=="products"){
 				this.request();
 			}
@@ -196,24 +213,50 @@ export default {
       })
   },
   methods: {
+    publish : function(productId)
+    {
+        console.log("Publishing...: " + productId);
+        this.service.loading = true;
+        this.alert.show = false; 
+        let authHeader = { headers: { Authorization: 'Bearer ' + this.accessToken } , 'Content-Type': 'application/json'};
+        var url = this.service.url +  "/" + productId + "/publish";
+        axios.post(url , {}, authHeader).then((response) => {
+          this.service.loading = false;
+          console.log(response);
+          tthis.alert.type = "success";
+          this.alert.detail = "You have been published the article successfully";
+          this.alert.show = true;
+        }).catch( error => { 
+          console.log(error);
+          this.alert.type = "error"; 
+          this.alert.show =true;
+          if(error.response){
+            this.alert.detail = "Your are not authorized to edit products. " + this.alert.errorCodes[error.response.status];
+          }
+          this.alert.detail = this.alert.detail  || "We received a server error"
+          this.service.loading = false;
+        });
+    },
     request : function() 
     {
         this.service.loading = true;
-        this.error.show = false;        
+        this.alert.show = false;        
         // this.results = this.mockProducts;
         // this.service.loading = false;
         let authHeader = { headers: { Authorization: 'Bearer ' + this.accessToken } };
         axios.get(this.service.url, authHeader).then((response) => {
+          response.data.forEach((s) => { s.show = false})
           this.results = response.data;
           this.service.loading = false;
           console.log(this.results)
         }).catch( error => { 
-          console.log(error); 
-          this.error.show =true;
+          console.log(error);
+          this.alert.type = "error";  
+          this.alert.show =true;
           if(error.response){
-            this.error.detail = this.error.errorCodes[error.response.status];
+            this.alert.detail = "Your are not authorized to view products. " + this.alert.errorCodes[error.response.status];
           }
-          this.error.detail = this.error.detail  || "We received a server error"
+          this.alert.detail = this.alert.detail  || "We received a server error"
           this.service.loading = false;
         });
     },

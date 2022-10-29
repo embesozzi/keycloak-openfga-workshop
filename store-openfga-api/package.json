@@ -1,7 +1,8 @@
 {
     "name": "store-openfga-api",
-    "description": "An OAuth 2.0 API protected by OpenFGA for fine-grained autorization.",
+    "description": "An OAuth 2.0 API protected by OpenFGA for fine-grained authorization.",
     "author": "Martin Besozzi <embesozzi@gmail.com>)",
+    "version": "1.0.0",
     "license": "MIT",
     "main": "server.js",
     "scripts": {

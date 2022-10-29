@@ -60,7 +60,7 @@ So far we don’t have an official Java SDK OpenFGA client to publish the author
     | Component                 |  URI                          |  Username   | Password    |  Image     |
     | ------------------------- |:-----------------------------:|:-----------:|:-----------:|:-----------:
     | Keycloak Console          |   http://keycloak:8081        |  admin      |  password   | quay.io/keycloak/keycloak:19.0.2 |
-    | OpenFGA Playground        |   http://localhost:3000       |             |             | openfga/openfga:latest           | 
+    | OpenFGA Playground        |   http://localhost:3000/playground       |             |             | openfga/openfga:latest           | 
     | OpenFGA API               |   http://localhost:8080       |             |             | confluentinc/cp-zookeeper:7.2.2<br />confluentinc/cp-kafka:7.2.2|
     | Store Portal              |   http://store:9090           |             |             | Custom image                   |
     | Store API                 |   http://store-api:9091       |             |             | Custom image                   |
@@ -80,6 +80,7 @@ So far we don’t have an official Java SDK OpenFGA client to publish the author
 
 ### Keycloak
 1. Enable the Keycloak OpenFGA Event Listener extension in Keycloak:
+
 
     * Open [administration console](http://keycloak:8081)
     * Choose realm
@@ -107,12 +108,15 @@ So far we don’t have an official Java SDK OpenFGA client to publish the author
     | User                      |  Relation                     |  Object               | 
     | ------------------------- |:-----------------------------:|:---------------------:|
     | role:admin-catalog        |   parent                      |  role:view-product    |
-    | group:global-admin        |   parent_group                |  role:admin-catalog   |
     | role:analyst-catalog      |   parent                      |  role:view-product    |
-    | role:admin-catalog        |   parent                      |  role:view-product    |
     | role:admin-catalog        |   parent                      |  role:edit-product    |
     | paula                     |   assignee                    |  role:analyst-catalog |
     | richard                   |   assignee                    |  role:admin-catalog   |
+
+
+    The users are identified by the value of the claim sub in the [OpenFGA Playground](http://localhost:3000/playground), see the Tuples tab:
+
+    <img src="doc/images/openfga-kc-authz-model.png" width="80%" height="80%">
 
 
 3. Restart the apps (containers: `store-oidc-app` and `store-openfga-api`)
@@ -125,3 +129,72 @@ As an example, we will implement an Product Catalog web application that has the
 * Global Admin users can view or edit any Product
 
 You can follow the test cases described in the [Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a).
+
+Nevertheless, the use cases are detailed below:
+
+### Use case 1: Access to the Store for managing products as an Analyst (Paula)
+
+1. Access to the [store web application](http://store:9090) store web application and proceed to login with Paula (paula / demo1234!) in Keycloak.
+    
+    <img src="doc/images/tc-store-login.png" width="80%" height="80%">
+
+2. Keycloak will return the id_token and the access token to the application
+
+3. The store web application will show the product calalog
+
+    3.1. The app will call the product API sending the access token in the Authorization header
+
+    3.2. The API will apply the following steps:
+
+    3.3. It will validate the token following the OAuth 2.0 standard and it will extract the claim sub to identify the user
+
+    3.4. Then it will call the OpenFGA API to check if the user has the role view-product with the relationship assignee
+
+    3.5. OpenFGA will return the response “allowed”
+
+    3.6. The API will return the product information and the store app will show the information to the user
+
+    <img src="doc/images/tc1-view-products-success.png" width="80%" height="80%">
+
+4. Try to publish a product by clicking the button "Publish" but you will see that Paula is not allowed
+
+    4.1. The app will call the product API sending the access token in the Authorization header
+
+    4.2. The API will apply the following steps:
+
+    4.3. It will validate the token following the OAuth 2.0 standard and it will extract the claim sub to identify the user
+
+    4.4. Then it will call the OpenFGA API to check if the user has the role edit-product with the relationship assignee
+
+    4.5. OpenFGA will return the response “denied”
+
+    <img src="doc/images/tc1-publish-product-denied.png" width="80%" height="80%">    
+
+### Use case 2: Access to the Store for managing products as an Admin (Richard)
+
+1. Access to the [store web application](http://store:9090) store web application and proceed to login with Richard (richard / demo1234!) in Keycloak.
+    
+    <img src="doc/images/tc-store-login.png" width="80%" height="80%">
+
+2. Keycloak will return the id_token and the access token to the application
+
+3. The store web application will show the product calalog
+
+    <img src="doc/images/tc-2-view-products-success.png" width="80%" height="80%">
+
+4. Try to publish a product by clicking the button "Publish" but you will see that Richard is allowed
+
+    <img src="doc/images/tc-2-publish-product-success.png" width="80%" height="80%">
+
+
+### Use case 3:  Access to the Store for managing products as an Regular User (Peter)
+
+1. Access to the [store web application](http://store:9090) store web application and proceed to login with Peter (peter / demo1234!) in Keycloak.
+    
+    <img src="doc/images/tc-store-login.png" width="80%" height="80%">
+
+2. Keycloak will return the id_token and the access token to the application
+
+3. The store web application will try to show but the user is not allowed
+
+    <img src="doc/images/tc-3-view-products-denied.png" width="80%" height="80%">
