@@ -110,16 +110,16 @@ So far we don’t have an official Java SDK OpenFGA client to publish the author
     | role:admin-catalog        |   parent                      |  role:view-product    |
     | role:analyst-catalog      |   parent                      |  role:view-product    |
     | role:admin-catalog        |   parent                      |  role:edit-product    |
-    | paula                     |   assignee                    |  role:analyst-catalog |
-    | richard                   |   assignee                    |  role:admin-catalog   |
+    | user:paula                |   assignee                    |  role:analyst-catalog |
+    | user:richard              |   assignee                    |  role:admin-catalog   |
 
 
     The users are identified by the value of the claim sub in the [OpenFGA Playground](http://localhost:3000/playground), see the Tuples tab:
 
-    <img src="doc/images/openfga-kc-authz-model.png" width="80%" height="80%">
+    <img src="doc/images/openfga-kc-authz-model.png" width="50%" height="50%">
 
 
-3. Restart the apps (containers: `store-oidc-app` and `store-openfga-api`)
+3. Restart the apps (containers: `store` and `store-api`)
 
 ## Test cases
 As an example, we will implement an Product Catalog web application that has the following requirements:
@@ -148,12 +148,12 @@ Nevertheless, the use cases are detailed below:
 
     3.3. It will validate the token following the OAuth 2.0 standard and it will extract the claim sub to identify the user
 
-    3.4. Then it will call the OpenFGA API to check if the user has the role view-product with the relationship assignee
+    3.4. Then it will call the OpenFGA API to check if the user has the view-product role with the relationship assignee
 
     3.5. OpenFGA will return the response “allowed”
 
-    3.6. The API will return the product information and the store app will show the information to the user
-
+    3.6. The API will return the product information and the Store web app will show the product catalog to the user
+    
     <img src="doc/images/tc1-view-products-success.png" width="80%" height="80%">
 
 4. Try to publish a product by clicking the button "Publish" but you will see that Paula is not allowed
@@ -164,7 +164,7 @@ Nevertheless, the use cases are detailed below:
 
     4.3. It will validate the token following the OAuth 2.0 standard and it will extract the claim sub to identify the user
 
-    4.4. Then it will call the OpenFGA API to check if the user has the role edit-product with the relationship assignee
+    4.4. Then it will call the OpenFGA API to check if the user has the edit-product role with the relationship assignee
 
     4.5. OpenFGA will return the response “denied”
 
