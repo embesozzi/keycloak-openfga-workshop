@@ -195,6 +195,6 @@ Nevertheless, the use cases are detailed below:
 
 2. Keycloak will return the id_token and the access token to the application
 
-3. The store web application will try to show but the user is not allowed
+3. The store web application will try to the products show but the user is not allowed
 
     <img src="doc/images/tc-3-view-products-denied.png" width="80%" height="80%">
