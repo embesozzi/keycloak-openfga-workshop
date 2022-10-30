@@ -74,7 +74,7 @@ So far we don’t have an official Java SDK OpenFGA client to publish the author
     cd openfga
     ./import.sh
     ```
-2. As the result you will see the following OpenFGA Authorization Model in the [OpenFGA Playground Console](http://localhost:8080) :
+2. As the result you will see the following OpenFGA Authorization Model in the [OpenFGA Playground Console](http://localhost:8080/playground) :
 
     ![openfga-keycloak-authorization-model](doc/images/openfga-authz-model.png)
 
