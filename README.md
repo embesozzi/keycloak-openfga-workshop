@@ -140,7 +140,7 @@ Nevertheless, the use cases are detailed below:
 
 2. Keycloak will return the id_token and the access token to the application
 
-3. The store web application will show the product calalog
+3. The Store web application will show the product catalog
 
     3.1. The app will call the product API sending the access token in the Authorization header
 
@@ -178,7 +178,7 @@ Nevertheless, the use cases are detailed below:
 
 2. Keycloak will return the id_token and the access token to the application
 
-3. The store web application will show the product calalog
+3. The store web application will show the product catalog
 
     <img src="doc/images/tc-2-view-products-success.png" width="80%" height="80%">
 
