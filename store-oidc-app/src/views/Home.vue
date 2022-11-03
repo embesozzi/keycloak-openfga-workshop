@@ -223,7 +223,7 @@ export default {
         axios.post(url , {}, authHeader).then((response) => {
           this.service.loading = false;
           console.log(response);
-          tthis.alert.type = "success";
+          this.alert.type = "success";
           this.alert.detail = "You have been published the article successfully";
           this.alert.show = true;
         }).catch( error => { 
