@@ -4,7 +4,7 @@ LABEL maintainer="embesozzi@gmail.com"
 ENV KC_DB=postgres
 ENV KC_HTTP_RELATIVE_PATH=/auth
 
-COPY ./lib/keycloak-openfga-event-listener-1.0.2.jar /opt/keycloak/providers/keycloak-openfga-event-listener-1.0.2.jar
+COPY ./lib/keycloak-openfga-event-listener-2.0.0.jar /opt/keycloak/providers/keycloak-openfga-event-listener-2.0.0.jar
 COPY ./initialize-poc.sh /opt/keycloak/initialize-poc.sh
 RUN /opt/keycloak/bin/kc.sh build
 
