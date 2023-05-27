@@ -89,7 +89,6 @@ services:
       KAFKA_CREATE_TOPICS: openfga-topic:1.1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_ADVERTISED_HOST_NAME: kafka
     depends_on:
       - zookeeper
     healthcheck:
