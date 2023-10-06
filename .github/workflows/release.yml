@@ -1,0 +1,37 @@
+name: Worshop Release
+
+on:
+  push:
+    tags:
+       - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  build-upload-release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Get version from tag
+      id: version
+      run: echo ::set-output name=number::$(echo $GITHUB_REF | cut -d / -f 3 | cut -d / -f 3 | sed -e 's/^v//') 
+
+    - name: Create changelog text
+      id: changelog
+      uses: loopwerk/tag-changelog@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        exclude_types: other,doc,chore
+        config_file: .github/tag-changelog-config.js        
+
+    - name: Parse changelog markdown to HTML
+      id: changelog-html
+      uses: lifepal/markdown-to-html@v1.2
+      with:
+        text: ${{ steps.changelog.outputs.changelog }}
+    
+    - name: Release to GitHub releasesc
+      uses: softprops/action-gh-release@v1
+      with:
+        body: ${{ steps.changelog.outputs.changes }}
+        fail_on_unmatched_files: true
+        tag_name: ${{ steps.version.outputs.number }}
