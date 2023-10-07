@@ -5,24 +5,29 @@ volumes:
     driver: local
 
 services:
-  #
-  # Keycloak IAM 
-  #
+
   keycloak-postgres:
-    image: postgres:11
+    image: postgres:14
     container_name: keycloak-postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+ #   volumes:
+ #     - postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD: password
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U keycloak" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5        
     ports:
       - 5433:5432
+
   keycloak:
-    build: ./keycloak
-    image: embesozzi/keycloak
+    image: quay.io/keycloak/keycloak:19.0.2
     container_name: keycloak
+    command:
+      - start-dev
     environment:
       KEYCLOAK_USER: admin
       KEYCLOAK_PASSWORD: password
@@ -35,117 +40,15 @@ services:
       KC_DB_PASSWORD: password
       KC_HOSTNAME_STRICT: 'false'
       KC_HTTP_ENABLED: 'true'
-      KC_HOSTNAME_ADMIN: keycloak
-      KC_HOSTNAME: keycloak
-      KC_HEALTH_ENABLED: 'true'
-      # Keycloak OpenFGA Event Listener SPI configuration      
-      KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_SERVICE_HANDLER_NAME: KAFKA
-      KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_AUTHORIZATION_MODEL: '{"type_definitions":[{"type":"group","relationships":[{"relation":"assignee","object":"role"}]},{"type":"role","relationships":[{"relation":"assignee","object":"user"},{"relation":"parent","object":"role"},{"relation":"parent_group","object":"group"}]}]}'
-      KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_CLIENT_ID: keycloak-producer
-      KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_ADMIN_TOPIC: openfga-topic
-      KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:19092
-      KC_LOG_LEVEL: INFO,io.embesozzi.keycloak:debug
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
-      interval: 5s
-      timeout: 2s
-      retries: 15  
+      KC_HOSTNAME_ADMIN: localhost
+      KC_HOSTNAME: localhost
+      KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_PUBLISHER_API_URL: http://openfga:8080
+      KC_LOG_LEVEL: INFO, com.twogenidentity.keycloak:debug,com.twogenidentity.keycloak.utils:debug
     ports:
       - 8081:8080
       - 8443:8443
+    volumes:
+      - $PWD/keycloak/lib/keycloak-openfga-event-publisher-1.0.0.jar:/opt/keycloak/providers/keycloak-openfga-event-publisher-1.0.0.jar
+      - $PWD/keycloak/initialize-poc.sh:/opt/keycloak/initialize-poc.sh
     depends_on:
       - keycloak-postgres
-    networks:
-      default:
-        aliases:
-          - keycloak
-  #
-  # Kakfa Cluster
-  #
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.2.2
-    hostname: zookeeper
-    container_name: zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_SERVER_ID: 1
-  kafka:
-    image: confluentinc/cp-kafka:7.2.2
-    hostname: kafka
-    container_name: kafka
-    ports:
-      - "9092:9092"
-      - "19092:19092"
-      - "29092:29092"
-    environment:
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:19092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_ADVERTISED_HOST_NAME: kafka
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
-      KAFKA_DELETE_TOPIC_ENABLE: 'true'
-      KAFKA_CREATE_TOPICS: openfga-topic:1.1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_ADVERTISED_HOST_NAME: kafka
-    depends_on:
-      - zookeeper
-    healthcheck:
-      test: nc -z localhost 19092 || exit -1
-      start_period: 15s
-      interval: 5s
-      timeout: 10s
-      retries: 10  
-  #
-  # OpenFGA
-  #  
-  postgres:
-    image: postgres:14
-    container_name: postgres
-    networks:
-      - default
-    ports:
-      - "5499:5432"
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-  migrate:
-    depends_on:
-      postgres:
-        condition: service_healthy
-    image: openfga/openfga:latest
-    container_name: migrate
-    command: migrate --datastore-engine postgres --datastore-uri 'postgres://postgres:password@postgres:5432/postgres?sslmode=disable'
-    networks:
-      - default
-  openfga:
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
-    image: openfga/openfga:latest
-    container_name: openfga
-    command: run --datastore-engine postgres --datastore-uri 'postgres://postgres:password@postgres:5432/postgres?sslmode=disable'
-    networks:
-      - default
-    ports:
-      - "8080:8080"
-      - "3000:3000"    
-  #
-  # Kafka OpenFGA Consumer
-  # 
-  kafka-consumer-openfga:
-    build: ./kafka-consumer-openfga
-    image: embesozzi/kafka-consumer-openfga
-    container_name: kafka-consumer-openfga
-    depends_on:
-      kafka:
-        condition: service_healthy
-    environment:
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181

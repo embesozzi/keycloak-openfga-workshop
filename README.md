@@ -1,10 +1,12 @@
 # Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)
-This repository contains a PoC implemented with [Keycloak](https://www.keycloak.org/) integrated with [OpenFGA](https://openfga.dev/) on demostrating how to apply fine-grained access control in a high performance and flexible authorization.
+This repository contains a PoC implemented with [Keycloak](https://www.keycloak.org/) integrated with [OpenFGA](https://openfga.dev/) on demostrating how to apply fine-grained access (FGA) control in a high performance and flexible authorization.
+
+In this new version of the PoC we have a direct integration between the Access Manager platform and the OpenFGA solution thanks to the use of the [OpenFGA Java SDK](https://github.com/openfga/java-sdk) to publish the events.
 
 This workshop is based the following article [Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a). You will find there full details about the authorization architecture guidelines and involved components.
 
 
-## Authorization Framework
+## Authorization Framework (New)
 
 The following diagram illustrates the solution architecture of this workshop:
 
@@ -13,22 +15,12 @@ The following diagram illustrates the solution architecture of this workshop:
 </p>
 
 * Core:
-
-    * Keycloak (A) is responsible for handling the authentication with the standard OpenID Connect and is managing the user access with his Role Model
-
-    * Keycloak is configure with a custom extension (B) [keycloak-openfga-event-listener](https://github.com/embesozzi/keycloak-openfga-event-listener) which listens to the Keycloak events (User Role Assignment, Role to Role Assignment, etc), parses this event into an OpenFGA tuple based on the [Keycloak Authz Schema](openfga/keycloak-authorization-model.json) and publishes the event to Kakfa Cluster (C)
-
-    * Kakfa OpenFGA Consumer (D) that using the OpenFGA SDK will publish the tuples to the OpenFGA Solution
-
-    * OpenFGA (E) is responsible for applying fine-grained access control. The OpenFGA service answers authorization checks by determining whether a relationship exists between an object and a user
-
+    * Keycloak is responsible for handling the authentication with the standard OpenID Connect and manages user access with its Role Model.
+    * Keycloak is configured with a new custom extension :rocket: [keycloak-openfga-event-publisher](https://github.com/embesozzi/keycloak-openfga-event-publisher) which listens to the Keycloak events (User Role Assignment, Role to Role Assignment, etc), parses this event into an OpenFGA tuple based on the [Keycloak Authorization Schema](model.dsl) and publishes them to OpenFGA over HTTP.
+    * OpenFGA is responsible for applying fine-grained access control. The OpenFGA service answers authorization checks by determining whether a relationship exists between an object and a user.
 * Other components
-
     * Store Web Application is integrated with Keycloak by OpenID Connect
-
     * Store API is protected by OAuth 2.0 and it utilizes the OpenFGA SDK for FGA
-
-So far we don’t have an official Java SDK OpenFGA client to publish the authorization tuples. This is why I decided to use an Apache Kafka cluster for managing the events. Nevertheless, the extension is prepared for the future to use an http client for publishing the events.
 
 # How to install?
 ## Prerequisites
@@ -46,7 +38,7 @@ So far we don’t have an official Java SDK OpenFGA client to publish the author
 2. Execute following Docker Compose command to start the deployment
 
    ```sh
-   docker-compose -f docker-compose.yml -f docker-compose-apps.yml up
+   docker-compose -f docker-compose.yml -f docker-compose-apps.yml -f docker-compose-openfga.yml up
    ```
 
 3. To be able to use this environment, you need to add this line to your local HOSTS file:
@@ -61,7 +53,6 @@ So far we don’t have an official Java SDK OpenFGA client to publish the author
     | ------------------------- |:-----------------------------:|:-----------:|:-----------:|:-----------:
     | Keycloak Console          |   http://keycloak:8081        |  admin      |  password   | quay.io/keycloak/keycloak:19.0.2 |
     | OpenFGA Playground        |   http://localhost:3000/playground       |             |             | openfga/openfga:latest           | 
-    | OpenFGA API               |   http://localhost:8080       |             |             | confluentinc/cp-zookeeper:7.2.2<br />confluentinc/cp-kafka:7.2.2|
     | Store Portal              |   http://store:9090           |             |             | Custom image                   |
     | Store API                 |   http://store-api:9091       |             |             | Custom image                   |
 
@@ -85,7 +76,7 @@ So far we don’t have an official Java SDK OpenFGA client to publish the author
     * Open [administration console](http://keycloak:8081)
     * Choose realm
     * Realm settings
-    * Select `Events` tab and add `openfga-events` to Event Listeners.
+    * Select `Events` tab and add `openfga-events-publisher` to Event Listeners.
 
     <img src="doc/images/kc-admin-events.png" width="80%" height="80%">
 
@@ -103,7 +94,7 @@ So far we don’t have an official Java SDK OpenFGA client to publish the author
 
     The password for all the users is `demo1234!`
 
-    Once these steps are finished, the Keycloak OpenFGA Event Listener extension has to proceed to publish these events to the Kafka topic called “openfga-topic”. Then, the Kafka consumer has published those events to the OpenGFA store using the SDK. Here are all tuples stored.
+    Once these steps are finished, the Keycloak OpenFGA Event Publisher extension has proceed to send these events over HTTP to the OpenFGA solution. Here, are all tuples stored.
 
     | User                      |  Relation                     |  Object               | 
     | ------------------------- |:-----------------------------:|:---------------------:|
@@ -116,7 +107,7 @@ So far we don’t have an official Java SDK OpenFGA client to publish the author
 
     The users are identified by the value of the claim sub in the [OpenFGA Playground](http://localhost:3000/playground), see the Tuples tab:
 
-    <img src="doc/images/openfga-kc-authz-model.png" width="50%" height="50%">
+    <img src="doc/images/openfga-tuples.png" width="50%" height="50%">
 
 
 3. Restart the apps (containers: `store` and `store-api`)

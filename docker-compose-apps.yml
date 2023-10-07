@@ -13,7 +13,8 @@ services:
       VUE_APP_CLIENT_ID: portal
     depends_on:
       keycloak:
-        condition: service_healthy  
+        condition: service_healthy
+          
   store-api:
     build: ./store-openfga-api
     image: embesozzi/store-openfga-api
