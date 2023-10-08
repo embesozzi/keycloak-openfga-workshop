@@ -11,16 +11,20 @@ This workshop is based the following article [Keycloak integration with OpenFGA 
 The following diagram illustrates the solution architecture of this workshop:
 
 <p align="center">
-  <img width="70%" height="70%" src="doc/images/solution-architecture.png">
+  <img width="80%" height="80%" src="doc/images/solution-architecture.png">
 </p>
 
 * Core:
     * Keycloak is responsible for handling the authentication with the standard OpenID Connect and manages user access with its Role Model.
-    * Keycloak is configured with a new custom extension :rocket: [keycloak-openfga-event-publisher](https://github.com/embesozzi/keycloak-openfga-event-publisher) which listens to the Keycloak events (User Role Assignment, Role to Role Assignment, etc), parses this event into an OpenFGA tuple based on the [Keycloak Authorization Schema](model.dsl) and publishes them to OpenFGA over HTTP.
+    * Keycloak is configured with a new custom extension ❤️: [keycloak-openfga-event-publisher](https://github.com/embesozzi/keycloak-openfga-event-publisher)
+      * Listens to the Keycloak events (User Role Assignment, Role to Role Assignment, etc).
+      * Parses this event into an OpenFGA tuple key based on the [Keycloak Authorization Schema](model.dsl).
+      * Publishes them to OpenFGA over HTTP using the [OpenFGA Java SDK](https://github.com/openfga/java-sdk).
     * OpenFGA is responsible for applying fine-grained access control. The OpenFGA service answers authorization checks by determining whether a relationship exists between an object and a user.
 * Other components
     * Store Web Application is integrated with Keycloak by OpenID Connect
     * Store API is protected by OAuth 2.0 and it utilizes the OpenFGA SDK for FGA
+
 
 # How to install?
 ## Prerequisites
@@ -49,12 +53,12 @@ The following diagram illustrates the solution architecture of this workshop:
 
 4. Access the following web UIs using URLs bellow via a web browser.
 
-    | Component                 |  URI                          |  Username   | Password    |  Image     |
-    | ------------------------- |:-----------------------------:|:-----------:|:-----------:|:-----------:
-    | Keycloak Console          |   http://keycloak:8081        |  admin      |  password   | quay.io/keycloak/keycloak:19.0.2 |
-    | OpenFGA Playground        |   http://localhost:3000/playground       |             |             | openfga/openfga:latest           | 
-    | Store Portal              |   http://store:9090           |             |             | Custom image                   |
-    | Store API                 |   http://store-api:9091       |             |             | Custom image                   |
+    | Component                 |  URI                          |  Credential               | Image     |
+    | ------------------------- |:-----------------------------:|:-------------------------:|:-----------:
+    | Keycloak Console          |   http://keycloak:8081        |  admin / password         | quay.io/keycloak/keycloak:19.0.2 |
+    | OpenFGA Playground        |   http://localhost:3000/playground  |                     | openfga/openfga:latest           | 
+    | Store Portal              |   http://store:9090           |                           | Custom image                   |
+    | Store API                 |   http://store-api:9091       |                           | Custom image                   |
 
 
 ## Post configuration steps
@@ -71,7 +75,6 @@ The following diagram illustrates the solution architecture of this workshop:
 
 ### Keycloak
 1. Enable the Keycloak OpenFGA Event Listener extension in Keycloak:
-
 
     * Open [administration console](http://keycloak:8081)
     * Choose realm
