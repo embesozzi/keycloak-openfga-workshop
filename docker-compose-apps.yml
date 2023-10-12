@@ -3,7 +3,7 @@ version: '3.8'
 services:
   store:
     build: ./store-oidc-app
-    image: embesozzi/store-oidc-app
+    image: twogentidentity/store-oidc-app
     container_name: store-oidc-app
     ports:
       - "9090:8080"
@@ -17,7 +17,7 @@ services:
           
   store-api:
     build: ./store-openfga-api
-    image: embesozzi/store-openfga-api
+    image: twogentidentity/store-openfga-api
     container_name: store-openfga-api
     depends_on:
       keycloak:

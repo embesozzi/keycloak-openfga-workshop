@@ -25,6 +25,7 @@ The following diagram illustrates the solution architecture of this workshop:
     * Store Web Application is integrated with Keycloak by OpenID Connect
     * Store API is protected by OAuth 2.0 and it utilizes the OpenFGA SDK for FGA
 
+Another cool feature of custom extension is its capability to discover the OpenFGA authorization model and determine which events are handled. This gives you the flexibility to choose your authorization model, whether it’s RBAC, GBAC, or both 🙌.
 
 # How to install?
 ## Prerequisites

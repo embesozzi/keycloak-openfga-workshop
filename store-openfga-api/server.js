@@ -58,7 +58,7 @@ const checkTuple = async function (user, relationship, object) {
     console.log("[Store API] Check user: " + user + " rel: " + relationship + " obj: " + object);
     try {
         if(!fgaClient.storeId){
-          console.log("[Kafka Consumer OpenFGA] Upps OpenFGA is not initialized properly...");
+          console.log("[Store API] Upps OpenFGA is not initialized properly...");
           await getOpenFGAStore();
           if(!fgaClient.storeId){
             throw new Error('Upps OpenFGA is not initialized properly :(')
@@ -80,7 +80,45 @@ const checkTuple = async function (user, relationship, object) {
     }
 }
 
-// mock data to send to our frontend
+app.get("/api/products", async (req, res) => {
+    const auth = req.get('Authorization');
+    const { sub } = decode(auth.split(' ')[1]);
+    console.log("[Store API] Claim sub: " + sub)
+    if (await userHasRole(sub, "view-product")) {
+        res.send(products);
+    } else {
+        res.status(403).send();
+    }
+});
+
+app.post("/api/products/:id/publish", async (req, res) => {
+  const auth = req.get('Authorization');
+  const { sub } = decode(auth.split(' ')[1]);
+  console.log("[Store API] Claim sub: " + sub)
+  const id = Number(req.params.id);
+  if (await userHasRole(sub, "edit-product")) {
+      res.send(200);
+  } else {
+      res.status(403).send();
+  }
+});
+
+app.get("/api/products/:id", checkJwt, (req, res) => {
+  const id = Number(req.params.id);
+  const product = products.find(event => event.id === id);
+  res.send(product);
+});
+
+
+app.get("/", (req, res) => {
+  res.send(`[Store API] API version 1.0.0`);
+});
+
+// listen on the port
+app.listen(port);
+
+
+// Mock data
 let products = [
   {
     id: 1,
@@ -129,40 +167,3 @@ let products = [
     status : "published"
   }
 ];
-
-app.get("/api/products", async (req, res) => {
-    const auth = req.get('Authorization');
-    const { sub } = decode(auth.split(' ')[1]);
-    console.log("[Store API] Claim: " + sub)
-    if (await userHasRole(sub, "view-product")) {
-        res.send(products);
-    } else {
-        res.status(403).send();
-    }
-});
-
-app.post("/api/products/:id/publish", async (req, res) => {
-  const auth = req.get('Authorization');
-  const { sub } = decode(auth.split(' ')[1]);
-  console.log("[Store API] Claim: " + sub)
-  const id = Number(req.params.id);
-  if (await userHasRole(sub, "edit-product")) {
-      res.send(200);
-  } else {
-      res.status(403).send();
-  }
-});
-
-app.get("/api/products/:id", checkJwt, (req, res) => {
-  const id = Number(req.params.id);
-  const product = products.find(event => event.id === id);
-  res.send(product);
-});
-
-
-app.get("/", (req, res) => {
-  res.send(`[Store API] API version 1.0.0`);
-});
-
-// listen on the port
-app.listen(port);

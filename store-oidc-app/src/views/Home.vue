@@ -170,6 +170,13 @@
         </v-row>
       </v-container>
     </v-main>
+    <v-footer class="bg-grey-lighten-1">
+      <v-row justify="center" no-gutters>
+        <v-col class="text-center mb-5" cols="12">
+				Sample provided by <a style="text-decoration: none;" href="https://twogenidentity.com"> ©2023 TwoGenIdentity.</a>All rights reserved 
+        </v-col>
+      </v-row>
+    </v-footer>
    </v-app>
 </template>
 <script>
@@ -191,7 +198,7 @@ export default {
 			show : false,
 			detail : null,
 			errorCodes : {
-				401 : "Your are not authorized to access to this resourced. (Error: Code 401)",
+				401 : "Your are not authorized to access to this resource. (Error: Code 401)",
 				403 : "Access forbidden. (Error: Code 403) ",
         404 : "Service not Found. (Error: Code 404)"
 			}
@@ -224,14 +231,14 @@ export default {
           this.service.loading = false;
           console.log(response);
           this.alert.type = "success";
-          this.alert.detail = "You have been published the article successfully";
+          this.alert.detail = "The article has been published successfully";
           this.alert.show = true;
         }).catch( error => { 
           console.log(error);
           this.alert.type = "error"; 
           this.alert.show =true;
           if(error.response){
-            this.alert.detail = "Your are not authorized to edit products. " + this.alert.errorCodes[error.response.status];
+            this.alert.detail = "You are not authorized to edit products. " + this.alert.errorCodes[error.response.status];
           }
           this.alert.detail = this.alert.detail  || "We received a server error"
           this.service.loading = false;

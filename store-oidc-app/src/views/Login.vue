@@ -32,6 +32,13 @@
       </v-row>
       -->
     </v-container>
+    <v-footer style="background-color:#e9e9eb">
+        <v-row justify="center" no-gutters>
+        <v-col class="text-center mb-5" cols="12">
+          Sample provided by <a style="text-decoration: none;" href="https://twogenidentity.com"> ©2023 TwoGenIdentity.</a> All rights reserved 
+        </v-col>
+        </v-row>
+    </v-footer>
     </v-app>
 </template>
 

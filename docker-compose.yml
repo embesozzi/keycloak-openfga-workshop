@@ -44,6 +44,11 @@ services:
       KC_HOSTNAME: localhost
       KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_PUBLISHER_API_URL: http://openfga:8080
       KC_LOG_LEVEL: INFO, com.twogenidentity.keycloak:debug,com.twogenidentity.keycloak.utils:debug
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 5s
+      timeout: 2s
+      retries: 15         
     ports:
       - 8081:8080
       - 8443:8443
