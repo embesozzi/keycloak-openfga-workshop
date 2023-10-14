@@ -2,11 +2,11 @@
     "name": "store-openfga-api",
     "description": "An OAuth 2.0 API protected by OpenFGA for fine-grained authorization.",
     "author": "Martin Besozzi <embesozzi@gmail.com>)",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "license": "MIT",
     "main": "server.js",
     "scripts": {
-        "start": "nodemon server.js",
+        "start": "nodemon src/server.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "dependencies": {
