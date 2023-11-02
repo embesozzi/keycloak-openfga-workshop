@@ -3,7 +3,7 @@ version: '3.8'
 services:
   store:
     build: ./store-oidc-app
-    image: twogentidentity/store-oidc-app
+    image: twogenidentity/store-oidc-app
     container_name: store-oidc-app
     ports:
       - "9090:8080"
@@ -17,12 +17,12 @@ services:
           
   store-api:
     build: ./store-openfga-api
-    image: twogentidentity/store-openfga-api
+    image: twogenidentity/store-openfga-api
     container_name: store-openfga-api
     depends_on:
       keycloak:
         condition: service_healthy  
     ports:
-      - "9091:8000"
+      - "9091:9091"
     environment: 
       OIDC_PROVIDER_DOMAIN: http://keycloak:8081/realms/master

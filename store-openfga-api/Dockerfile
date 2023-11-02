@@ -1,4 +1,5 @@
-FROM node:12-alpine
+FROM node:16.0.0
+# FROM --platform=linux/amd64 node:16.0.0
 LABEL maintainer="embesozzi@gmail.com"
 
 WORKDIR /app

@@ -2,7 +2,7 @@
 
 echo "Creating PoC Users, Role Model, User Role Assigments and Clients"
 
-/opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user $KEYCLOAK_USER --password $KEYCLOAK_PASSWORD
+/opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8081 --realm master --user $KEYCLOAK_USER --password $KEYCLOAK_PASSWORD
 
 # Users
 /opt/keycloak/bin/kcadm.sh create users -r master -s username=paula -s firstName=Paula -s lastName=Von -s enabled=true -s email=paula@demo.com
