@@ -70,7 +70,7 @@ Another cool feature of custom extension is its capability to discover the OpenF
     cd openfga
     ./import.sh
     ```
-2. As the result you will see the following OpenFGA Authorization Model in the [OpenFGA Playground Console](http://localhost:8080/playground) :
+2. As the result you will see the following OpenFGA Authorization Model in the [OpenFGA Playground Console](http://localhost:3000/playground) :
 
     ![openfga-keycloak-authorization-model](doc/images/openfga-authz-model.png)
 
