@@ -2,7 +2,13 @@
 
 echo "Creating PoC Users, Role Model, User Role Assigments and Clients"
 
-/opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8081 --realm master --user $KEYCLOAK_USER --password $KEYCLOAK_PASSWORD
+/opt/keycloak/bin/kcadm.sh config credentials --server $KEYCLOAK_URL --realm master --user $KEYCLOAK_USER --password $KEYCLOAK_PASSWORD
+
+# Enable openfga-events
+/opt/keycloak/bin/kcadm.sh update events/config -s 'eventsListeners=["openfga-events-publisher","jboss-logging"]'
+
+# Clients
+/opt/keycloak/bin/kcadm.sh create clients -r master -s clientId=portal -s publicClient=true -s 'redirectUris=["http://store:9090/callback"]' -s 'webOrigins=["http://store:9090"]' -s 'attributes={ "post.logout.redirect.uris": "http://store:9090/home?action=logout", "access.token.lifespan": 3600}' -o
 
 # Users
 /opt/keycloak/bin/kcadm.sh create users -r master -s username=paula -s firstName=Paula -s lastName=Von -s enabled=true -s email=paula@demo.com
@@ -24,9 +30,4 @@ echo "Creating PoC Users, Role Model, User Role Assigments and Clients"
 # User Role Assignments
 /opt/keycloak/bin/kcadm.sh add-roles -r master --uusername paula --rolename analyst-catalog
 /opt/keycloak/bin/kcadm.sh add-roles -r master --uusername richard --rolename admin-catalog
-
-
-# Clients
-/opt/keycloak/bin/kcadm.sh create clients -r master -s clientId=portal -s publicClient=true -s 'redirectUris=["http://store:9090/callback"]' -s 'webOrigins=["http://store:9090"]' -s 'attributes={ "post.logout.redirect.uris": "http://store:9090/home?action=logout", "access.token.lifespan": 3600}' -o
-
 

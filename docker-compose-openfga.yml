@@ -47,3 +47,8 @@ services:
     ports:
       - "8080:8080" #http
       - "3000:3000" #playground
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/grpc_health_probe", "-addr=openfga:8081"]
+      interval: 3s
+      timeout: 30s
+      retries: 3

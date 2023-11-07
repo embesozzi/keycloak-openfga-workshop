@@ -43,7 +43,7 @@ Another cool feature of custom extension is its capability to discover the OpenF
 2. Execute following Docker Compose command to start the deployment
 
    ```sh
-   docker-compose -f docker-compose.yml -f docker-compose-apps.yml -f docker-compose-openfga.yml up
+   docker-compose -f docker-compose.yml -f docker-compose-apps.yml -f docker-compose-openfga.yml -f docker-compose-import.yml up
    ```
 
 3. To be able to use this environment, you need to add this line to your local HOSTS file:
@@ -62,43 +62,31 @@ Another cool feature of custom extension is its capability to discover the OpenF
     | Store API                 |   http://store-api:9091       |                           | Custom image                   |
 
 
-## Post configuration steps
 
-### OpenFGA
-1. Import the [OpenFGA authorization schema for Keycloak](openfga/keycloak-authorization-model.json):
-    ```bash
-    cd openfga
-    ./import.sh
-    ```
-2. As the result you will see the following OpenFGA Authorization Model in the [OpenFGA Playground Console](http://localhost:8080/playground) :
+## Review configuration (optional)
 
-    ![openfga-keycloak-authorization-model](doc/images/openfga-authz-model.png)
+>
+> In this new version of the workshop, we automatically import all the required configurations into the Keycloak and OpenFGA platforms 😄 🪄
+>
+### Keycloak Platform
+- You will find that the OpenFGA Event Listener 'openfga-events-publisher' extension in Keycloak is enabled.
 
-### Keycloak
-1. Enable the Keycloak OpenFGA Event Listener extension in Keycloak:
-
-    * Open [administration console](http://keycloak:8081)
-    * Choose realm
-    * Realm settings
-    * Select `Events` tab and add `openfga-events-publisher` to Event Listeners.
+    * [Administration console](http://keycloak:8081) > Realm settings > `openfga-events-publisher`   
 
     <img src="doc/images/kc-admin-events.png" width="80%" height="80%">
 
-2. Proceed to initialize the PoC:
-
-    Execute the following [script](keycloak/initialize-poc.sh) to initialize the PoC:
-
-    ```bash
-    docker exec keycloak /bin/bash /opt/keycloak/initialize-poc.sh
-    ```
-
-    This script will create the OAuth Clients and the following Users and Role Model:
+- The following roles and demo users have already been created in Keycloak.
 
     ![users](doc/images/users.png)
 
     The password for all the users is `demo1234!`
 
-    Once these steps are finished, the Keycloak OpenFGA Event Publisher extension has proceed to send these events over HTTP to the OpenFGA solution. Here, are all tuples stored.
+### OpenFGA Platform
+- You will see the following OpenFGA Authorization Model in the [OpenFGA Playground Console](http://localhost:3000/playground) and the Tuples tab:
+
+  <img src="doc/images/openfga-tuples.png" width="80%" height="80%">
+
+- Once the workshop is deployed, the Keycloak OpenFGA Event Publisher extension proceeds to send these events over HTTP to the OpenFGA solution. Here, all tuples are stored.
 
     | User                      |  Relation                     |  Object               | 
     | ------------------------- |:-----------------------------:|:---------------------:|
@@ -109,16 +97,11 @@ Another cool feature of custom extension is its capability to discover the OpenF
     | user:richard              |   assignee                    |  role:admin-catalog   |
 
 
-    The users are identified by the value of the claim sub in the [OpenFGA Playground](http://localhost:3000/playground), see the Tuples tab:
-
-    <img src="doc/images/openfga-tuples.png" width="50%" height="50%">
-
-
-3. Restart the apps (containers: `store` and `store-api`)
+    The users are identified by the value of the claim sub.
 
 ## Test cases
 As an example, we will implement an Product Catalog web application that has the following requirements:
-* Only authenticated user with MFA can access to the application
+* Only authenticated user can access to the application
 * Product can be viewed by their Analyst
 * Product can be edited by their Admin
 * Global Admin users can view or edit any Product
