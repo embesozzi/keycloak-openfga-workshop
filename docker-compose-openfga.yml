@@ -22,7 +22,7 @@ services:
     depends_on:
       openfga-postgres:
         condition: service_healthy
-    image: openfga/openfga:v1.3.1
+    image: openfga/openfga:${OPENFGA_VERSION}
     container_name: migrate
     environment:
       - OPENFGA_DATASTORE_ENGINE=postgres
@@ -35,13 +35,14 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
-    image: openfga/openfga:v1.3.1
+    image: openfga/openfga:${OPENFGA_VERSION}
     container_name: openfga
     command: run
     environment:
       - OPENFGA_DATASTORE_ENGINE=postgres
       - OPENFGA_DATASTORE_URI=postgres://postgres:password@openfga-postgres:5432/postgres?sslmode=disable
       - OPENFGA_DATASTORE_MAX_OPEN_CONNS=100
+      - OPENFGA_LOG_LEVEL=error
     networks:
       - default
     ports:

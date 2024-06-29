@@ -1,16 +1,10 @@
 version: '3'
 
-volumes:
-  postgres_data:
-    driver: local
-
 services:
 
   keycloak-postgres:
     image: postgres:14
     container_name: keycloak-postgres
- #   volumes:
- #     - postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
@@ -24,7 +18,7 @@ services:
       - 5433:5432
 
   keycloak:
-    image: quay.io/keycloak/keycloak:21.1
+    image: quay.io/keycloak/keycloak:${KC_VERSION}
     container_name: keycloak
     command:
       - start-dev
@@ -42,14 +36,11 @@ services:
       KC_HOSTNAME_STRICT: 'false'
       KC_HTTP_ENABLED: 'true'
       KC_HEALTH_ENABLED: 'true'
-      KC_HOSTNAME_ADMIN: localhost
       KC_HOSTNAME: keycloak
-      KC_FEATURES: declarative-user-profile
       KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_PUBLISHER_API_URL: http://openfga:8080
-      KC_LOG_LEVEL: INFO, com.twogenidentity.keycloak:debug,com.twogenidentity.keycloak.utils:debug
+      KC_LOG_LEVEL: info,com.twogenidentity.keycloak:debug,com.twogenidentity.keycloak.utils:debug
     healthcheck:
-      # test: ["CMD", "curl", "-f", "http://localhost:8081/health/ready"]
-      test: cat /proc/net/tcp | grep '00000000:1F91 00000000:0000' || exit 1
+      test: ["CMD", "/opt/keycloak/bin/kcadm.sh", "config", "credentials", "--server", "http://localhost:8081", "--realm", "master", "--user", "admin", "--password", "password"]
       interval: 5s
       timeout: 2s
       retries: 15         
@@ -57,7 +48,7 @@ services:
       - 8081:8081
       - 8443:8443
     volumes:
-      - $PWD/keycloak/lib/keycloak-openfga-event-publisher-1.0.0.jar:/opt/keycloak/providers/keycloak-openfga-event-publisher-1.0.0.jar
-      - $PWD/keycloak/initialize-poc.sh:/opt/keycloak/initialize-poc.sh
+      - $PWD/keycloak/lib/keycloak-openfga-event-publisher.jar:/opt/keycloak/providers/keycloak-openfga-event-publisher.jar
+      - $PWD/keycloak/import.sh:/opt/keycloak/import.sh
     depends_on:
       - keycloak-postgres
