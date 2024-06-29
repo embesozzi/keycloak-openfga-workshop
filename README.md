@@ -56,8 +56,8 @@ Another cool feature of custom extension is its capability to discover the OpenF
 
     | Component                 |  URI                          |  Credential               | Image     |
     | ------------------------- |:-----------------------------:|:-------------------------:|:-----------:
-    | Keycloak Console          |   http://keycloak:8081        |  admin / password         | quay.io/keycloak/keycloak:19.0.2 |
-    | OpenFGA Playground        |   http://localhost:3000/playground  |                     | openfga/openfga:latest           | 
+    | Keycloak Console          |   http://keycloak:8081        |  admin / password         | quay.io/keycloak/keycloak:25.0.1 |
+    | OpenFGA Playground        |   http://localhost:3000/playground  |                     | openfga/openfga:v1.5.5           | 
     | Store Portal              |   http://store:9090           |                           | Custom image                   |
     | Store API                 |   http://store-api:9091       |                           | Custom image                   |
 
