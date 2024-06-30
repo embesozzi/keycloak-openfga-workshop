@@ -1,0 +1,118 @@
+openapi: 3.0.1
+info:
+  title: Products API
+  description: 'API Products (secured using OAuth) protected by ReBAC (Zanzibar)'
+  version: 1.0.0
+servers:
+- url: http://localhost:9980/api/products
+tags:
+- name: Product
+  description: Operations about identity and access platform
+paths:
+  /products:
+    get:
+      tags:
+      - Product
+      summary: Get products
+      security: []
+      x-apisix-plugins:
+        authz-rebac:
+          object_type: role
+          object: products-view 
+      responses:
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+  /product:
+    post:
+      tags:
+      - Product
+      summary: "Add a new product"
+      security: []
+      x-apisix-plugins:
+        authz-rebac:
+          object_type: role
+          object: products-editor       
+      requestBody:
+        description: Information about a new user in the system
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Product"
+      responses:
+        "405":
+          description: "Invalid input"
+        "201":
+          description: Created
+    put:
+      tags:
+        - Product
+      summary: Update an existing product
+      description: Update an existing product by Id
+      x-apisix-plugins:
+        authz-rebac:
+          object_type: role
+          object: products-editor       
+      requestBody:
+        description: Update an existent product in the store
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Product not found
+  '/product/{product_id}':
+    delete:
+      tags:
+      - Product  
+      summary: "Delete a  product"
+      x-apisix-plugins:
+        authz-rebac:
+          object_type: role
+          object: products-editor 
+      responses:
+        "200":
+          description: Created
+      parameters:
+        - schema:
+            type: integer
+          name: product_id
+          in: path
+          required: true
+components:
+  responses:
+    UnauthorizedError:
+      description: Access token is missing or invalid
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+      xml:
+        name: User
+  securitySchemes:
+    bearerOAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

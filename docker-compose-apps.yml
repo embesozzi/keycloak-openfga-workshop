@@ -9,13 +9,14 @@ services:
       - "9090:8080"
     environment: 
       VUE_APP_OIDC_PROVIDER_DOMAIN: http://keycloak:8081/realms/master
-      VUE_APP_API_URL: http://store-api:9091/api/products
+#      VUE_APP_API_URL: http://store-openfga-api:9091/api/products
+      VUE_APP_API_URL: http://store-authz-gateway:9080/api/products
       VUE_APP_CLIENT_ID: portal
     depends_on:
       keycloak:
         condition: service_healthy
           
-  store-api:
+  store-openfga-api:
     build: ./store-openfga-api
     image: twogenidentity/store-openfga-api
     container_name: store-openfga-api
@@ -26,3 +27,28 @@ services:
       - "9091:9091"
     environment: 
       OIDC_PROVIDER_DOMAIN: http://keycloak:8081/realms/master
+
+  store-authz-gateway:
+    image: ghcr.io/embesozzi/apisix-authz-openfga:latest
+    container_name: store-authz-gateway
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    volumes:
+      - $PWD/store-authz-gateway/routes.yml:/usr/local/apisix/conf/apisix.yaml:ro                  
+      - $PWD/store-authz-gateway/config.yml:/usr/local/apisix/conf/config.yaml:ro
+    environment:
+      KEYCLOAK_URL: ${AM_INTERNAL_URL}
+      KEYCLOAK_CLIENT_SECRET: jnxDqhu0GTaCCWuKxodUnSdKzEIBquKT
+      SESSION_SECRET: nFpaoPPxHGHJLFlE12qx8P5TGgJBDYdS
+      FGA_HOST: ${OPENFGA_HOST}
+      STORE_API: ${STORE_API}
+    ports:
+      - "9080:9080"
+
+  store-api:
+    build: ./store-api
+    image: ghcr.io/embesozzi/demo-store-api:1.0.0
+    container_name: store-api
+#    ports:
+#      - "7091:7091"            

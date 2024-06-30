@@ -1,0 +1,41 @@
+services:
+upstreams:
+  - id: 'store-api'
+    nodes:
+      "store-api:7091": 1
+
+routes:
+  - uris:
+      - "/api/products"
+      - "/api/products/**"
+    methods: ["POST", "PUT", "DELETE"]
+    upstream_id: 'store-api'
+    plugins:
+      authz-openfga:
+        host: ${{FGA_HOST}}
+        user_jwt_claim: sub
+        relation: assignee
+        object_type: role
+        object: edit-product 
+  - uris:
+      - "/api/products"
+    methods: ["GET"]
+    upstream_id: 'store-api'
+    plugins:
+      authz-openfga:
+        host: ${{FGA_HOST}}
+        user_jwt_claim: sub
+        relation: assignee
+        object_type: role
+        object: view-product
+
+global_rules:
+  - id: 'global-cors'
+    plugins:
+      cors:
+        allow_origins: 'http://store:9090'
+        allow_credential: true
+        allow_methods: 'POST, GET, OPTIONS, PATCH, PUT'
+        allow_headers: '**'
+        expose_headers: '**'
+#END

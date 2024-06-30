@@ -9,6 +9,7 @@ echo "Creating PoC Users, Role Model, User Role Assigments and Clients"
 
 # Clients
 /opt/keycloak/bin/kcadm.sh create clients -r master -s clientId=portal -s publicClient=true -s 'redirectUris=["http://store:9090/callback"]' -s 'webOrigins=["http://store:9090"]' -s 'attributes={ "post.logout.redirect.uris": "http://store:9090/home?action=logout", "access.token.lifespan": 3600}' -o
+/opt/keycloak/bin/kcadm.sh create clients -r master -s clientId=apisix -s 'redirectUris=["http://localhost:9980/callback"]'  -s 'secret=jnxDqhu0GTaCCWuKxodUnSdKzEIBquKT' -o
 
 # Users
 /opt/keycloak/bin/kcadm.sh create users -r master -s username=paula -s firstName=Paula -s lastName=Von -s enabled=true -s email=paula@demo.com

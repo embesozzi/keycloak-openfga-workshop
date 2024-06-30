@@ -5,6 +5,7 @@ In this new version of the PoC we have a direct integration between the Access M
 
 This workshop is based the following article [Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a). You will find there full details about the authorization architecture guidelines and involved components.
 
+In the latest version, I aimed to continue improving the authorization architecture and provide an agnostic approach for exposing and protecting APIs following best practices such as Policy as Code (PaC), decoupling authorization, and low-code authorization. Therefore, I added an identity-aware API gateway, Apache APISIX, as an API sidecar to the authorization architecture to enforce authorization and decouple it from the backend. The gateway uses a plugin I developed called [authz-openfga](https://github.com/embesozzi/apisix-authz-openfga) that supports Relationship-Based Access Control (ReBAC) policies because it's integrated with OpenFGA platform. The details are explained in the following article [Mastering Access Control: Implementing Low-Code Authorization Based on ReBAC and Decoupling Pattern](https://medium.com/@embesozzi/mastering-access-control-implementing-low-code-authorization-based-on-rebac-and-decoupling-pattern-f6f54f70115e)
 
 ## Authorization Framework (New)
 
@@ -23,7 +24,10 @@ The following diagram illustrates the solution architecture of this workshop:
     * OpenFGA is responsible for applying fine-grained access control. The OpenFGA service answers authorization checks by determining whether a relationship exists between an object and a user.
 * Other components
     * Store Web Application is integrated with Keycloak by OpenID Connect
-    * Store API is protected by OAuth 2.0 and it utilizes the OpenFGA SDK for FGA
+    * Store Authorization Gateway exposes and protects the Store API with ReBAC policies integrated with the OpenFGA Platform (Protection at API Gateway).
+
+You can also have Store OpenFGA API is protected by OAuth 2.0 and it utilizes the OpenFGA SDK for FGA as example (Protection at API Level).
+
 
 Another cool feature of custom extension is its capability to discover the OpenFGA authorization model and determine which events are handled. This gives you the flexibility to choose your authorization model, whether it’s RBAC, GBAC, or both 🙌.
 
@@ -49,7 +53,7 @@ Another cool feature of custom extension is its capability to discover the OpenF
 3. To be able to use this environment, you need to add this line to your local HOSTS file:
 
    ```sh
-   127.0.0.1  keycloak openfga store store-api
+   127.0.0.1  keycloak openfga store store-openfga-api store-authz-gateway
    ```
 
 4. Access the following web UIs using URLs bellow via a web browser.
@@ -59,7 +63,8 @@ Another cool feature of custom extension is its capability to discover the OpenF
     | Keycloak Console          |   http://keycloak:8081        |  admin / password         | quay.io/keycloak/keycloak:25.0.1 |
     | OpenFGA Playground        |   http://localhost:3000/playground  |                     | openfga/openfga:v1.5.5           | 
     | Store Portal              |   http://store:9090           |                           | Custom image                   |
-    | Store API                 |   http://store-api:9091       |                           | Custom image                   |
+     | Store Authorization Gateway              |   http://store-authz-gateway:9080           |                           | Custom image based Apache APISIX Gateway                   |
+    | Store OpenFGA API                 |   http://store-openfga:9091       |                           | Custom image                   |
 
 
 
@@ -107,6 +112,8 @@ As an example, we will implement an Product Catalog web application that has the
 * Global Admin users can view or edit any Product
 
 You can follow the test cases described in the [Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a).
+
+And the article [Mastering Access Control: Implementing Low-Code Authorization Based on ReBAC and Decoupling Pattern](https://medium.com/@embesozzi/mastering-access-control-implementing-low-code-authorization-based-on-rebac-and-decoupling-pattern-f6f54f70115e).
 
 Nevertheless, the use cases are detailed below:
 

@@ -1,0 +1,18 @@
+{
+    "name": "store-api",
+    "description": "API protected by APISIX for fine-grained authorization.",
+    "author": "Martin Besozzi <embesozzi@gmail.com>)",
+    "version": "1.0.0",
+    "license": "MIT",
+    "main": "server.js",
+    "scripts": {
+        "start": "nodemon src/server.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "dependencies": {
+        "body-parser": "^1.19.0",
+        "cors": "^2.8.5",
+        "express": "^4.17.1",
+        "nodemon": "^2.0.6"
+    }
+}

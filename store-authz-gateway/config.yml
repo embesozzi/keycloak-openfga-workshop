@@ -1,0 +1,35 @@
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+ 
+nginx_config:
+    http_configuration_snippet: |
+        proxy_buffer_size 128k;
+        proxy_buffers 4 256k;
+        proxy_busy_buffers_size 256k;
+        large_client_header_buffers 4 8k;
+
+        # authz-openfga plugin
+        lua_shared_dict authz_openfga_authorization_model             1m; # cache for discovery metadata documents
+
+plugins:                           # plugin list (sorted by priority)
+  - openid-connect                 # priority: 2599
+  - forward-auth                   # priority: 2002
+  - opa                            # priority: 2001
+  - cors                           
+  - proxy-cache                    # priority: 1085
+  - body-transformer               # priority: 1080
+  - proxy-mirror                   # priority: 1010
+  - proxy-rewrite                  # priority: 1008
+  - workflow                       # priority: 1006
+  - api-breaker                    # priority: 1005
+  - limit-conn                     # priority: 1003
+  - limit-count                    # priority: 1002
+  - limit-req                      # priority: 1001
+  - echo                           # priority: 412
+  # <- recommend to use priority (0, 100) for your custom plugins
+  - authz-openfga                  # priority: 22
+  - serverless-pre-function
+  - serverless-post-function       # priority: -2000
+#END
