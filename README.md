@@ -1,11 +1,11 @@
 # Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)
 This repository contains a PoC implemented with [Keycloak](https://www.keycloak.org/) integrated with [OpenFGA](https://openfga.dev/) on demostrating how to apply fine-grained access (FGA) control in a high performance and flexible authorization.
 
-In this new version of the PoC we have a direct integration between the Access Manager platform and the OpenFGA solution thanks to the use of the [OpenFGA Java SDK](https://github.com/openfga/java-sdk) to publish the events.
+In this version of the PoC we have a direct integration between the Access Manager platform and the OpenFGA solution thanks to the use of the [OpenFGA Java SDK](https://github.com/openfga/java-sdk) to publish the events.
 
 This workshop is based the following article [Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a). You will find there full details about the authorization architecture guidelines and involved components.
 
-In the latest version, I aimed to continue improving the authorization architecture and provide an agnostic approach for exposing and protecting APIs following best practices such as Policy as Code (PaC), decoupling authorization, and low-code authorization. Therefore, I added an identity-aware API gateway, Apache APISIX, as an API sidecar to the authorization architecture to enforce authorization and decouple it from the backend. The gateway uses a plugin I developed called [authz-openfga](https://github.com/embesozzi/apisix-authz-openfga) that supports Relationship-Based Access Control (ReBAC) policies because it's integrated with OpenFGA platform. The details are explained in the following article [Mastering Access Control: Implementing Low-Code Authorization Based on ReBAC and Decoupling Pattern](https://medium.com/@embesozzi/mastering-access-control-implementing-low-code-authorization-based-on-rebac-and-decoupling-pattern-f6f54f70115e)
+In the new version 🔥, I aimed to continue improving the authorization architecture and provide an agnostic approach for exposing and protecting APIs following best practices such as Policy as Code (PaC), decoupling authorization, and low-code authorization. Therefore, I added an identity-aware API gateway, Apache APISIX, as an API sidecar to the authorization architecture to enforce authorization and decouple it from the backend. The gateway uses a plugin I developed called [authz-openfga](https://github.com/embesozzi/apisix-authz-openfga) that supports Relationship-Based Access Control (ReBAC) policies because it's integrated with OpenFGA platform. The details are explained in the following article [Mastering Access Control: Implementing Low-Code Authorization Based on ReBAC and Decoupling Pattern](https://medium.com/@embesozzi/mastering-access-control-implementing-low-code-authorization-based-on-rebac-and-decoupling-pattern-f6f54f70115e).
 
 ## Authorization Framework (New)
 
@@ -24,7 +24,7 @@ The following diagram illustrates the solution architecture of this workshop:
     * OpenFGA is responsible for applying fine-grained access control. The OpenFGA service answers authorization checks by determining whether a relationship exists between an object and a user.
 * Other components
     * Store Web Application is integrated with Keycloak by OpenID Connect
-    * Store Authorization Gateway exposes and protects the Store API with ReBAC policies integrated with the OpenFGA Platform (Protection at API Gateway).
+    * Store Authorization Gateway exposes and protects the Store API with ReBAC policies integrated with the OpenFGA Platform (Protection at API Gateway)🔥.
 
 You can also have Store OpenFGA API is protected by OAuth 2.0 and it utilizes the OpenFGA SDK for FGA as example (Protection at API Level).
 
