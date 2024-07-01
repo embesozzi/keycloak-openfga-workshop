@@ -67,6 +67,9 @@ Another cool feature of custom extension is its capability to discover the OpenF
     | Store OpenFGA API                 |   http://store-openfga:9091       |                           | Custom image                   |
 
 
+<p align="center">
+  <img width="80%" height="80%" src="doc/images/workshop-docker-environment.png">
+</p>
 
 ## Review configuration (optional)
 
