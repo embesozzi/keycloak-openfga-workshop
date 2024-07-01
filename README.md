@@ -12,7 +12,7 @@ In the new version 🔥, I aimed to continue improving the authorization archite
 The following diagram illustrates the solution architecture of this workshop:
 
 <p align="center">
-  <img width="80%" height="80%" src="doc/images/solution-architecture.png">
+  <img width="90%" height="90%" src="doc/images/workshop-docker-environment.png">
 </p>
 
 * Core:
@@ -65,11 +65,6 @@ Another cool feature of custom extension is its capability to discover the OpenF
     | Store Portal              |   http://store:9090           |                           | Custom image                   |
      | Store Authorization Gateway              |   http://store-authz-gateway:9080           |                           | Custom image based Apache APISIX Gateway                   |
     | Store OpenFGA API                 |   http://store-openfga:9091       |                           | Custom image                   |
-
-
-<p align="center">
-  <img width="80%" height="80%" src="doc/images/workshop-docker-environment.png">
-</p>
 
 ## Review configuration (optional)
 
