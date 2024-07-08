@@ -58,19 +58,24 @@ Another cool feature of custom extension is its capability to discover the OpenF
 
 4. Access the following web UIs using URLs bellow via a web browser.
 
-    | Component                 |  URI                          |  Credential               | Image     |
-    | ------------------------- |:-----------------------------:|:-------------------------:|:-----------:
-    | Keycloak Console          |   http://keycloak:8081        |  admin / password         | quay.io/keycloak/keycloak:25.0.1 |
-    | OpenFGA Playground        |   http://localhost:3000/playground  |                     | openfga/openfga:v1.5.5           | 
-    | Store Portal              |   http://store:9090           |                           | Custom image                   |
-     | Store Authorization Gateway              |   http://store-authz-gateway:9080           |                           | Custom image based Apache APISIX Gateway                   |
-    | Store OpenFGA API                 |   http://store-openfga:9091       |                           | Custom image                   |
+    | Component                 |  URI                          |  Credential               | Image                                    |
+    | ------------------------- |:-----------------------------:|:-------------------------:|:-----------------------------------------:
+    | Keycloak Console          |   http://keycloak:8081        |  admin / password         | quay.io/keycloak/keycloak:25.0.1         |
+    | OpenFGA Playground        |   http://localhost:3000/playground  |                     | openfga/openfga:v1.5.5                   | 
+    | Store Portal              |   http://store:9090           |                           | Custom image                             |
+    | Store Authorization Gateway    |   http://store-authz-gateway:9080 |                  | Custom image based Apache APISIX Gateway |
+    | Store OpenFGA API              |   http://store-openfga:9091       |                  | Custom image                             |
 
+>
+> In the latest version, the store portal calls the API exposed by the Store Authorization Gateway (`store-authz-gateway:9080`). If you want to call the Store OpenFGA API (`store-openfga:9091`), just adjust the store portal configuration
+>
+    
 ## Review configuration (optional)
 
 >
 > In this new version of the workshop, we automatically import all the required configurations into the Keycloak and OpenFGA platforms 😄 🪄
 >
+       
 ### Keycloak Platform
 - You will find that the OpenFGA Event Listener 'openfga-events-publisher' extension in Keycloak is enabled.
 
