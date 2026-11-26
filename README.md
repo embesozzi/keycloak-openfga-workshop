@@ -8,9 +8,9 @@ The workshop is based on these articles, which explain the architecture in detai
 * [Mastering Access Control: Implementing Low-Code Authorization Based on ReBAC and Decoupling Pattern](https://medium.com/@embesozzi/mastering-access-control-implementing-low-code-authorization-based-on-rebac-and-decoupling-pattern-f6f54f70115e)
 
 > [!TIP]
-> ### New: from fine-grained authorization for users to AI agents
+> ### New: extending fine-grained authorization to AI agents
 >
-> **Your users got fine-grained authorization. Now your AI agents need it too.**
+> **Fine-grained authorization doesn't stop at users. AI agents need it too.**
 >
 > When an agent calls MCP tools on behalf of a user, the questions of this workshop come back, with more at stake:
 > **who** is calling (the user, the agent, or both), **what** can they do (which tool, on which resource), and **where** is it enforced.
