@@ -1,188 +1,305 @@
-# Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)
-This repository contains a PoC implemented with [Keycloak](https://www.keycloak.org/) integrated with [OpenFGA](https://openfga.dev/) on demostrating how to apply fine-grained access (FGA) control in a high performance and flexible authorization.
+# Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)
 
-In this version of the PoC we have a direct integration between the Access Manager platform and the OpenFGA solution thanks to the use of the [OpenFGA Java SDK](https://github.com/openfga/java-sdk) to publish the events.
+A hands-on workshop that shows fine-grained authorization with [Keycloak](https://www.keycloak.org/) and [OpenFGA](https://openfga.dev/). Keycloak manages users and roles. The [keycloak-openfga-event-publisher](https://github.com/embesozzi/keycloak-openfga-event-publisher) extension publishes each role change to OpenFGA as a relationship tuple. Apps, APIs and gateways then ask OpenFGA whether a user is allowed.
 
-This workshop is based the following article [Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a). You will find there full details about the authorization architecture guidelines and involved components.
+The workshop is based on these articles, which explain the architecture in detail:
 
-In the new version 🔥, I aimed to continue improving the authorization architecture and provide an agnostic approach for exposing and protecting APIs following best practices such as Policy as Code (PaC), decoupling authorization, and low-code authorization. Therefore, I added an identity-aware API gateway, Apache APISIX, as an API sidecar to the authorization architecture to enforce authorization and decouple it from the backend. The gateway uses a plugin I developed called [authz-openfga](https://github.com/embesozzi/apisix-authz-openfga) that supports Relationship-Based Access Control (ReBAC) policies because it's integrated with OpenFGA platform. The details are explained in the following article [Mastering Access Control: Implementing Low-Code Authorization Based on ReBAC and Decoupling Pattern](https://medium.com/@embesozzi/mastering-access-control-implementing-low-code-authorization-based-on-rebac-and-decoupling-pattern-f6f54f70115e).
+* [Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a)
+* [Mastering Access Control: Implementing Low-Code Authorization Based on ReBAC and Decoupling Pattern](https://medium.com/@embesozzi/mastering-access-control-implementing-low-code-authorization-based-on-rebac-and-decoupling-pattern-f6f54f70115e)
 
-## Authorization Framework (New)
+> [!TIP]
+> ### New: from fine-grained authorization for users to AI agents
+>
+> **Your users got fine-grained authorization. Now your AI agents need it too.**
+>
+> When an agent calls MCP tools on behalf of a user, the questions of this workshop come back, with more at stake:
+> **who** is calling (the user, the agent, or both), **what** can they do (which tool, on which resource), and **where** is it enforced.
+>
+> **[Agentic Security Labs](https://github.com/embesozzi/agentic-security-labs)**: hands-on Docker labs that secure MCP tools with open standards, no custom protocols:
+>
+> - **MCP tool authorization**: [Agent Gateway](https://agentgateway.dev/) is the Policy Enforcement Point (PEP) in front of the MCP server: it asks Keycloak to allow or deny each `tools/call`, per tool and per user.
+> - **OpenID AuthZEN**: the standard API between the PEP and the PDP, with Keycloak as the AuthZEN Policy Decision Point. Change the PDP without changing the gateway.
+> - **Cedar policies in Keycloak**: the [Keycloak Cedar provider](https://github.com/embesozzi/keycloak-cedar-authorization) brings [Cedar](https://www.cedarpolicy.com/) to Keycloak authorization: readable policy as code, RBAC and ABAC in one language, policies validated against a schema, and a formally verified engine.
+>
+> **Read more**
+>
+> - [Implementing OpenID AuthZEN in Agent Gateway: MCP Tool Authorization](https://embesozzi.github.io/posts/martin-besozzi/implementing-openid-authzen-in-agentgateway/)
+> - [Cedar Policy Engine in Keycloak: Fine-Grained Authorization for Users and AI Agents via AuthZEN](https://embesozzi.github.io/posts/martin-besozzi/keycloak-cedar-authorization-authzen/)
+> - [AI Agents Require Runtime Authorization: Just In Time Passkey Approval for Sensitive Actions](https://embesozzi.github.io/posts/martin-besozzi/ai-agents-runtime-jit-authorization-passkeys-sensitive-actions/)
+> - More on the blog: [embesozzi.github.io](https://embesozzi.github.io/) · all links in [More workshops, labs and articles](#more-workshops-labs-and-articles)
 
-The following diagram illustrates the solution architecture of this workshop:
+## Architecture
 
 <p align="center">
   <img width="90%" height="90%" src="doc/images/workshop-docker-environment.png">
 </p>
 
-* Core:
-    * Keycloak is responsible for handling the authentication with the standard OpenID Connect and manages user access with its Role Model.
-    * Keycloak is configured with a new custom extension ❤️: [keycloak-openfga-event-publisher](https://github.com/embesozzi/keycloak-openfga-event-publisher)
-      * Listens to the Keycloak events (User Role Assignment, Role to Role Assignment, etc).
-      * Parses this event into an OpenFGA tuple key based on the [Keycloak Authorization Schema](model.dsl).
-      * Publishes them to OpenFGA over HTTP using the [OpenFGA Java SDK](https://github.com/openfga/java-sdk).
-    * OpenFGA is responsible for applying fine-grained access control. The OpenFGA service answers authorization checks by determining whether a relationship exists between an object and a user.
-* Other components
-    * Store Web Application is integrated with Keycloak by OpenID Connect
-    * Store Authorization Gateway exposes and protects the Store API with ReBAC policies integrated with the OpenFGA Platform (Protection at API Gateway)🔥.
+* **Keycloak** authenticates users with OpenID Connect and manages their access with its role model. It runs with the [keycloak-openfga-event-publisher](https://github.com/embesozzi/keycloak-openfga-event-publisher) extension, which:
+  * listens to Keycloak admin events (user role assignment, composite roles, group membership, service accounts),
+  * maps each event to an OpenFGA tuple of the [authorization model](openfga/model.dsl),
+  * publishes it to OpenFGA with the [OpenFGA Java SDK](https://github.com/openfga/java-sdk).
+* **OpenFGA** answers authorization checks: does a relationship exist between a user and an object?
+* **Store web app**: a Vue app that signs users in with Keycloak (OpenID Connect).
+* **Store Authorization Gateway**: Apache APISIX with the [authz-openfga](https://github.com/embesozzi/apisix-authz-openfga) plugin. It protects the Store API with ReBAC policies, so the backend has no authorization code (protection at the API gateway).
+* **Store OpenFGA API**: an API protected by OAuth 2.0 that calls OpenFGA with the OpenFGA SDK (protection at the API).
 
-You can also have Store OpenFGA API is protected by OAuth 2.0 and it utilizes the OpenFGA SDK for FGA as example (Protection at API Level).
+The extension reads the authorization model of the store and handles only the events the model has relations for, so the same extension works with RBAC, group-based access, or both.
 
+<details>
+<summary>Authorization model</summary>
 
-Another cool feature of custom extension is its capability to discover the OpenFGA authorization model and determine which events are handled. This gives you the flexibility to choose your authorization model, whether it’s RBAC, GBAC, or both 🙌.
+```
+model
+  schema 1.1
+type client
+type group
+  relations
+    define assignee: [user, client]
+type role
+  relations
+    define assignee: [user, client] or assignee from parent or assignee from parent_group
+    define parent: [role]
+    define parent_group: [group]
+type user
+```
 
-# How to install?
-## Prerequisites
+OpenFGA resolves the inheritance: the assignees of a role include the assignees of its parent (composite) roles and the members of the groups that have the role. See [How does it work?](https://github.com/embesozzi/keycloak-openfga-event-publisher#how-does-it-work) for each Keycloak change and the tuple it publishes.
 
- * Install Git, [Docker](https://www.docker.com/get-docker) and [Docker Compose](https://docs.docker.com/compose/install/#install-compose) in order to run the steps provided in the next section<br>
+</details>
 
-## Deploy the PoC
+## Quick start
 
-1. Clone this repository
-    ````bash
-    git clone https://github.com/embesozzi/keycloak-openfga-workshop
-    cd keycloak-openfga-workshop
-    ````
+Requires Git, Docker with Docker Compose, and `make`. The workshop uses the host ports `8080`, `8081`, `9080`, `9090` and `9091`.
 
-2. Execute following Docker Compose command to start the deployment
+| Component | Version |
+|-----------|---------|
+| Keycloak | 26.8.2 |
+| keycloak-openfga-event-publisher | [3.1.0](https://github.com/embesozzi/keycloak-openfga-event-publisher/releases/tag/v3.1.0) |
+| OpenFGA | v1.23.0 |
 
-   ```sh
-   docker-compose -f docker-compose.yml -f docker-compose-apps.yml -f docker-compose-openfga.yml -f docker-compose-import.yml up
-   ```
+Versions are set in [.env](.env).
 
-3. To be able to use this environment, you need to add this line to your local HOSTS file:
+**1. Clone the repository**
 
-   ```sh
-   127.0.0.1  keycloak openfga store store-openfga-api store-authz-gateway
-   ```
+```shell
+git clone https://github.com/embesozzi/keycloak-openfga-workshop
+cd keycloak-openfga-workshop
+```
 
-4. Access the following web UIs using URLs bellow via a web browser.
+**2. Add the workshop hosts to your hosts file** (`/etc/hosts`)
 
-    | Component                 |  URI                          |  Credential               | Image                                    |
-    | ------------------------- |:-----------------------------:|:-------------------------:|:-----------------------------------------:
-    | Keycloak Console          |   http://keycloak:8081        |  admin / password         | quay.io/keycloak/keycloak:25.0.1         |
-    | OpenFGA Playground        |   http://localhost:3000/playground  |                     | openfga/openfga:v1.5.5                   | 
-    | Store Portal              |   http://store:9090           |                           | Custom image                             |
-    | Store Authorization Gateway    |   http://store-authz-gateway:9080 |                  | Custom image based Apache APISIX Gateway |
-    | Store OpenFGA API              |   http://store-openfga:9091       |                  | Custom image                             |
+```
+127.0.0.1  keycloak openfga store store-openfga-api store-authz-gateway
+```
 
->
-> In the latest version, the store portal calls the API exposed by the Store Authorization Gateway (`store-authz-gateway:9080`). If you want to call the Store OpenFGA API (`store-openfga:9091`), just adjust the store portal configuration
->
-    
-## Review configuration (optional)
+**3. Start the workshop**
 
->
-> In this new version of the workshop, we automatically import all the required configurations into the Keycloak and OpenFGA platforms 😄 🪄
->
-       
-### Keycloak Platform
-- You will find that the OpenFGA Event Listener 'openfga-events-publisher' extension in Keycloak is enabled.
+```shell
+make up      # or: docker compose up -d --build
+```
 
-    * [Administration console](http://keycloak:8081) > Realm settings > `openfga-events-publisher`   
+Run `make` to list all targets (`up`, `down`, `restart`, `logs`, `test`, `clean`). This builds Keycloak with the extension ([keycloak/Dockerfile](keycloak/Dockerfile) downloads release 3.1.0 and checks its checksum), creates the `keycloak` store and the model in OpenFGA, and imports the users, roles and clients into Keycloak ([keycloak/import.sh](keycloak/import.sh)). The extension publishes them to OpenFGA.
 
-    <img src="doc/images/kc-admin-events.png" width="80%" height="80%">
+**4. Open the workshop**
 
-- The following roles and demo users have already been created in Keycloak.
+| Component | URL | Credentials |
+|-----------|-----|-------------|
+| Store web app | http://store:9090 | `paula`, `richard` or `peter` / `demo1234!` |
+| Keycloak Admin Console | http://keycloak:8081/admin | `admin` / `password` |
+| OpenFGA API | http://localhost:8080 | |
+| Store Authorization Gateway | http://store-authz-gateway:9080 | |
+| Store OpenFGA API | http://store-openfga-api:9091 | |
 
-    ![users](doc/images/users.png)
+The store web app calls the API through the Store Authorization Gateway. To call the Store OpenFGA API instead, set `VUE_APP_API_URL` of the `store` service to `http://store-openfga-api:9091/api/products` in [docker-compose.yml](docker-compose.yml).
 
-    The password for all the users is `demo1234!`
+**5. Stop the workshop**
 
-### OpenFGA Platform
-- You will see the following OpenFGA Authorization Model in the [OpenFGA Playground Console](http://localhost:3000/playground) and the Tuples tab:
+```shell
+make down    # or: docker compose down -v
+```
 
-  <img src="doc/images/openfga-tuples.png" width="80%" height="80%">
+## What the workshop sets up
 
-- Once the workshop is deployed, the Keycloak OpenFGA Event Publisher extension proceeds to send these events over HTTP to the OpenFGA solution. Here, all tuples are stored.
+### Keycloak
 
-    | User                      |  Relation                     |  Object               | 
-    | ------------------------- |:-----------------------------:|:---------------------:|
-    | role:admin-catalog        |   parent                      |  role:view-product    |
-    | role:analyst-catalog      |   parent                      |  role:view-product    |
-    | role:admin-catalog        |   parent                      |  role:edit-product    |
-    | user:paula                |   assignee                    |  role:analyst-catalog |
-    | user:richard              |   assignee                    |  role:admin-catalog   |
+* The `openfga-events-publisher` event listener is enabled in the `master` realm (Realm settings > Events).
 
+  <details>
+  <summary>Screenshot</summary>
 
-    The users are identified by the value of the claim sub.
+  <img src="doc/images/kc-admin-events.png" width="80%" height="80%">
 
-## Test cases
-As an example, we will implement an Product Catalog web application that has the following requirements:
-* Only authenticated user can access to the application
-* Product can be viewed by their Analyst
-* Product can be edited by their Admin
-* Global Admin users can view or edit any Product
+  </details>
 
-You can follow the test cases described in the [Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a).
+* Roles: `admin-catalog` (composite of `view-product` and `edit-product`), `analyst-catalog` (composite of `view-product`).
+* Users (password `demo1234!`): `paula` has `analyst-catalog`, `richard` has `admin-catalog`, `peter` has no role.
 
-And the article [Mastering Access Control: Implementing Low-Code Authorization Based on ReBAC and Decoupling Pattern](https://medium.com/@embesozzi/mastering-access-control-implementing-low-code-authorization-based-on-rebac-and-decoupling-pattern-f6f54f70115e).
+  <details>
+  <summary>Screenshot</summary>
 
-Nevertheless, the use cases are detailed below:
+  ![users](doc/images/users.png)
 
-### Use case 1: Access to the Store for managing products as an Analyst (Paula)
+  </details>
 
-1. Access to the [store web application](http://store:9090) store web application and proceed to login with Paula (paula / demo1234!) in Keycloak.
-    
+The extension is configured with environment variables of the `keycloak` service ([configuration reference](https://github.com/embesozzi/keycloak-openfga-event-publisher#configuration)):
+
+| Variable | Value |
+|----------|-------|
+| `KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_PUBLISHER_OPENFGA_API_URL` | `http://openfga:8080` |
+| `KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_PUBLISHER_OPENFGA_STORE_NAME` | `keycloak` |
+| `KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_PUBLISHER_OPENFGA_IDENTIFIER` | `name` (roles and groups by name) |
+| `KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_PUBLISHER_OPENFGA_CREDENTIALS_METHOD` | `none` (also `api_token` or `client_credentials`, see [Authentication](https://github.com/embesozzi/keycloak-openfga-event-publisher#authentication)) |
+
+### OpenFGA
+
+After the import, the `keycloak` store has these tuples:
+
+| User | Relation | Object |
+|------|----------|--------|
+| `role:admin-catalog` | `parent` | `role:view-product` |
+| `role:admin-catalog` | `parent` | `role:edit-product` |
+| `role:analyst-catalog` | `parent` | `role:view-product` |
+| `user:<paula's id>` | `assignee` | `role:analyst-catalog` |
+| `user:<richard's id>` | `assignee` | `role:admin-catalog` |
+
+Users are identified by their Keycloak id, the `sub` claim of their tokens.
+
+<details>
+<summary>Read the tuples and run a check</summary>
+
+```shell
+STORE_ID=$(curl -s http://localhost:8080/stores | jq -r '.stores[] | select(.name == "keycloak") | .id')
+
+# All tuples
+curl -s -X POST http://localhost:8080/stores/$STORE_ID/read -H 'content-type: application/json' -d '{}' \
+  | jq -r '.tuples[].key | "\(.user) \(.relation) \(.object)"'
+
+# Can paula view products? (user id from the Admin Console, Users > paula)
+PAULA_ID=...
+curl -s -X POST http://localhost:8080/stores/$STORE_ID/check -H 'content-type: application/json' \
+  -d "{\"tuple_key\": {\"user\": \"user:$PAULA_ID\", \"relation\": \"assignee\", \"object\": \"role:view-product\"}}"
+# {"allowed":true, ...}  paula has view-product through analyst-catalog
+```
+
+With the [OpenFGA CLI](https://github.com/openfga/cli): `fga tuple read --store-id $STORE_ID`.
+
+</details>
+
+## Use cases
+
+A product catalog with these requirements:
+
+* Only authenticated users can access the application.
+* Analysts can view products.
+* Admins can view and publish products.
+
+| User | Role | View products | Publish a product |
+|------|------|:-------------:|:-----------------:|
+| Paula | `analyst-catalog` | ✅ | ❌ |
+| Richard | `admin-catalog` | ✅ | ✅ |
+| Peter | (none) | ❌ | ❌ |
+
+<details>
+<summary><b>Use case 1:</b> Paula (Analyst) can view products but cannot publish them</summary>
+
+1. Open the [store web app](http://store:9090) and sign in with Keycloak as `paula` / `demo1234!`.
+
     <img src="doc/images/tc-store-login.png" width="80%" height="80%">
 
-2. Keycloak will return the id_token and the access token to the application
+2. Keycloak returns the ID token and the access token to the app.
 
-3. The Store web application will show the product catalog
+3. The app shows the product catalog:
 
-    3.1. The app will call the product API sending the access token in the Authorization header
+    1. The app calls the products API with the access token in the `Authorization` header.
+    2. The API (or the gateway) validates the token and reads the `sub` claim to identify the user.
+    3. It asks OpenFGA whether the user is `assignee` of `role:view-product`.
+    4. OpenFGA answers `allowed`: Paula has `view-product` through `analyst-catalog`.
+    5. The API returns the products and the app shows the catalog.
 
-    3.2. The API will apply the following steps:
-
-    3.3. It will validate the token following the OAuth 2.0 standard and it will extract the claim sub to identify the user
-
-    3.4. Then it will call the OpenFGA API to check if the user has the view-product role with the relationship assignee
-
-    3.5. OpenFGA will return the response “allowed”
-
-    3.6. The API will return the product information and the Store web app will show the product catalog to the user
-    
     <img src="doc/images/tc1-view-products-success.png" width="80%" height="80%">
 
-4. Try to publish a product by clicking the button "Publish" but you will see that Paula is not allowed
+4. Click **Publish** on a product. Paula is not allowed:
 
-    4.1. The app will call the product API sending the access token in the Authorization header
+    1. The app calls the publish endpoint with the access token.
+    2. The API (or the gateway) asks OpenFGA whether the user is `assignee` of `role:edit-product`.
+    3. OpenFGA answers `denied`, and the API returns `403`.
 
-    4.2. The API will apply the following steps:
+    <img src="doc/images/tc1-publish-product-denied.png" width="80%" height="80%">
 
-    4.3. It will validate the token following the OAuth 2.0 standard and it will extract the claim sub to identify the user
+</details>
 
-    4.4. Then it will call the OpenFGA API to check if the user has the edit-product role with the relationship assignee
+<details>
+<summary><b>Use case 2:</b> Richard (Admin) can view and publish products</summary>
 
-    4.5. OpenFGA will return the response “denied”
+1. Open the [store web app](http://store:9090) and sign in as `richard` / `demo1234!`.
 
-    <img src="doc/images/tc1-publish-product-denied.png" width="80%" height="80%">    
-
-### Use case 2: Access to the Store for managing products as an Admin (Richard)
-
-1. Access to the [store web application](http://store:9090) store web application and proceed to login with Richard (richard / demo1234!) in Keycloak.
-    
     <img src="doc/images/tc-store-login.png" width="80%" height="80%">
 
-2. Keycloak will return the id_token and the access token to the application
-
-3. The store web application will show the product catalog
+2. The app shows the product catalog: Richard has `view-product` through `admin-catalog`.
 
     <img src="doc/images/tc-2-view-products-success.png" width="80%" height="80%">
 
-4. Try to publish a product by clicking the button "Publish" but you will see that Richard is allowed
+3. Click **Publish** on a product. Richard is allowed: he has `edit-product` through `admin-catalog`.
 
     <img src="doc/images/tc-2-publish-product-success.png" width="80%" height="80%">
 
+</details>
 
-### Use case 3:  Access to the Store for managing products as an Regular User (Peter)
+<details>
+<summary><b>Use case 3:</b> Peter (regular user) cannot view products</summary>
 
-1. Access to the [store web application](http://store:9090) store web application and proceed to login with Peter (peter / demo1234!) in Keycloak.
-    
+1. Open the [store web app](http://store:9090) and sign in as `peter` / `demo1234!`.
+
     <img src="doc/images/tc-store-login.png" width="80%" height="80%">
 
-2. Keycloak will return the id_token and the access token to the application
-
-3. The store web application will try to the products show but the user is not allowed
+2. The app tries to show the products, but Peter has no role, so the API returns `403`.
 
     <img src="doc/images/tc-3-view-products-denied.png" width="80%" height="80%">
+
+</details>
+
+<details>
+<summary><b>Try it:</b> change a role and watch OpenFGA follow</summary>
+
+In the [Admin Console](http://keycloak:8081/admin), assign `analyst-catalog` to `peter` (Users > peter > Role mapping). The extension publishes `user:<peter's id> assignee role:analyst-catalog`, and Peter can now view products: the APIs check OpenFGA on every request, so no new token is needed. Remove the role and the extension deletes the tuple.
+
+</details>
+
+## Automated test
+
+[tests/test_workshop.py](tests/test_workshop.py) (pytest) checks the running workshop end to end: the tuples in OpenFGA, and the three use cases at both enforcement points (the Store OpenFGA API and the Store Authorization Gateway). It runs in a container on the workshop network. CI runs it on every push and pull request.
+
+```shell
+make up
+make test    # docker run --rm --network keycloak-openfga-workshop_default <tests image>
+```
+
+> [!WARNING]
+> The import creates a `smoke-test` client with the password grant for the tests. Testing only, not recommended ([RFC 9700](https://www.rfc-editor.org/rfc/rfc9700)).
+
+## Legacy: integration through Kafka
+
+The first version of this workshop published the events through Kafka, before an OpenFGA SDK for Java existed. It is kept in [kafka-integration](kafka-integration/README.md) for reference and is no longer maintained.
+
+## More workshops, labs and articles
+
+**Agentic AI security**
+
+* [Agentic Security Labs](https://github.com/embesozzi/agentic-security-labs): hands-on labs for securing AI agents and the MCP tools they call with open identity and authorization standards (Keycloak, OpenID AuthZEN, Cedar, Agent Gateway).
+* [Implementing OpenID AuthZEN in Agent Gateway: MCP Tool Authorization](https://embesozzi.github.io/posts/martin-besozzi/implementing-openid-authzen-in-agentgateway/)
+* [Cedar Policy Engine in Keycloak: Fine-Grained Authorization for Users and AI Agents via AuthZEN](https://embesozzi.github.io/posts/martin-besozzi/keycloak-cedar-authorization-authzen/), with the [Keycloak Cedar authorization provider](https://github.com/embesozzi/keycloak-cedar-authorization)
+* [Agentic AI Security: Protecting Interactive Keycloak MCP App with OpenID AuthZEN Gateway for FGA](https://embesozzi.github.io/posts/martin-besozzi/agentic-ai-security-protecting-interactive-keycloak-mcp-app-with-openid-authzen-gateway/)
+* [AI Agents Require Runtime Authorization: Just In Time Passkey Approval for Sensitive Actions](https://embesozzi.github.io/posts/martin-besozzi/ai-agents-runtime-jit-authorization-passkeys-sensitive-actions/)
+* [Mastering Secure APIs and AI Agents with Zero Trust and Fine-Grained Authorization Based on OpenID AuthZEN](https://embesozzi.github.io/posts/martin-besozzi/mastering-secure-apis-and-ai-agents-with-zero-trust-and-fine-grained-authorization-based/)
+
+**Keycloak and OpenFGA**
+
+* [keycloak-openfga-event-publisher](https://github.com/embesozzi/keycloak-openfga-event-publisher): the Keycloak extension used in this workshop
+* [apisix-authz-openfga](https://github.com/embesozzi/apisix-authz-openfga): the APISIX plugin used by the Store Authorization Gateway
+* [Keycloak integration with OpenFGA (based on Zanzibar) for Fine-Grained Authorization at Scale (ReBAC)](https://embesozzi.medium.com/keycloak-integration-with-openfga-based-on-zanzibar-for-fine-grained-authorization-at-scale-d3376de00f9a)
+* [Mastering Access Control: Implementing Low-Code Authorization Based on ReBAC and Decoupling Pattern](https://medium.com/@embesozzi/mastering-access-control-implementing-low-code-authorization-based-on-rebac-and-decoupling-pattern-f6f54f70115e)
+
+**More**
+
+* Blog: [embesozzi.github.io](https://embesozzi.github.io/): posts on IAM, passkeys and AI agent security
+* Book: [Keycloak: Identity and Access Management for Modern Applications, 2nd Edition](https://www.amazon.com/Keycloak-Identity-Management-Applications-applications-ebook/dp/B0BPY1RDND)

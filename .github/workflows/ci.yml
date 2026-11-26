@@ -1,0 +1,35 @@
+name: CI
+
+# Starts the whole workshop and runs the end-to-end tests (make test)
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Validate the compose file
+        run: docker compose config --quiet
+
+      - name: Start the workshop
+        run: make up
+
+      - name: Smoke test
+        run: make test
+
+      - name: Logs
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Stop the workshop
+        if: always()
+        run: docker compose down -v

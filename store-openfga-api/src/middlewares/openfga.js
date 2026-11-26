@@ -11,11 +11,14 @@ const fgaClient = new OpenFgaApi({
 const discoverStore = async () => {
     try {
         const { stores } = await fgaClient.listStores();
-        for (const store of stores) {
-            console.log(`[Store API] Store found name: ${store.name} id: ${store.id}`);
-            fgaClient.storeId = store.id;
+        // Same store as the Keycloak extension (store name, default "keycloak")
+        const store = stores.find((s) => s.name === config.storeName);
+        if (!store) {
+            throw new Error(`Store '${config.storeName}' not found`);
         }
-        return fgaClient;  
+        console.log(`[Store API] Store found name: ${store.name} id: ${store.id}`);
+        fgaClient.storeId = store.id;
+        return fgaClient;
     }
     catch(e){
         throw new Error('OpenFGA is not initialized properly')

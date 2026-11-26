@@ -1,4 +1,7 @@
 # Keycloak integration with OpenFGA via Kafka (Legacy)
+
+> [!WARNING]
+> This legacy integration is no longer maintained and does not run as described below: it uses Keycloak 19, and the `docker-compose-openfga.yml` and `docker-compose-apps.yml` files it references were merged into [docker-compose.yml](../docker-compose.yml). Use the [direct integration](../README.md) instead.
 In this case the integration between [Keycloak](https://www.keycloak.org/) and [OpenFGA](https://openfga.dev/) is via Kafka. This was the first version of the PoC when it wasn't available an OpenFGA SDK for Java for publishing the event directly to OpenFGA - Luckly now there is :).
 
 Therefore If you can follow the new approach with the direct integration between Keycloak and OpenFGA with the new extension describe [here](../README.md)

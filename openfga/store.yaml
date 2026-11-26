@@ -1,0 +1,4 @@
+# OpenFGA store for the workshop, imported by the openfga-import service (fga store import).
+# The extension publishes to the store named "keycloak".
+name: keycloak
+model_file: ./model.dsl

@@ -1,37 +1,50 @@
-name: Worshop Release
+name: Workshop Release
 
+# Push a tag vX.Y.Z to release: runs the smoke test, then creates the GitHub release with the changelog
 on:
   push:
     tags:
-       - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: read
 
 jobs:
-  build-upload-release:
+  smoke-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
 
-    - name: Get version from tag
-      id: version
-      run: echo ::set-output name=number::$(echo $GITHUB_REF | cut -d / -f 3 | cut -d / -f 3 | sed -e 's/^v//') 
+      - name: Start the workshop
+        run: make up
 
-    - name: Create changelog text
-      id: changelog
-      uses: loopwerk/tag-changelog@v1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        exclude_types: other,doc,chore
-        config_file: .github/tag-changelog-config.js        
+      - name: Smoke test
+        run: make test
 
-    - name: Parse changelog markdown to HTML
-      id: changelog-html
-      uses: lifepal/markdown-to-html@v1.2
-      with:
-        text: ${{ steps.changelog.outputs.changelog }}
-    
-    - name: Release to GitHub releasesc
-      uses: softprops/action-gh-release@v1
-      with:
-        body: ${{ steps.changelog.outputs.changes }}
-        fail_on_unmatched_files: true
-        tag_name: ${{ steps.version.outputs.number }}
+      - name: Logs
+        if: failure()
+        run: docker compose logs --no-color
+
+  release:
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Create changelog text
+        id: changelog
+        uses: loopwerk/tag-changelog@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          exclude_types: other,doc,chore
+          include_commit_body: true
+          config_file: .github/tag-changelog-config.js
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.changes }}

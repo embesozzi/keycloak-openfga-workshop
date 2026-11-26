@@ -1,54 +1,195 @@
-version: '3'
+# Keycloak + OpenFGA workshop: `docker compose up -d --build`
+#
+# Start order:
+#   openfga-postgres -> openfga-migrate -> openfga -> openfga-import (store "keycloak" + model)
+#   keycloak-postgres -> keycloak (with the extension) -> keycloak-import (users, roles, clients)
+#   -> store, store-openfga-api, store-authz-gateway, store-api
+#
+# Versions are in .env.
+
+name: keycloak-openfga-workshop
+
+x-postgres-healthcheck: &postgres-healthcheck
+  interval: 5s
+  timeout: 5s
+  retries: 10
 
 services:
 
+  openfga-postgres:
+    image: postgres:17-alpine
+    container_name: openfga-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      <<: *postgres-healthcheck
+
+  openfga-migrate:
+    image: openfga/openfga:${OPENFGA_VERSION}
+    container_name: openfga-migrate
+    command: migrate
+    environment:
+      OPENFGA_DATASTORE_ENGINE: postgres
+      OPENFGA_DATASTORE_URI: postgres://postgres:password@openfga-postgres:5432/postgres?sslmode=disable
+    depends_on:
+      openfga-postgres:
+        condition: service_healthy
+
+  openfga:
+    image: openfga/openfga:${OPENFGA_VERSION}
+    container_name: openfga
+    command: run
+    environment:
+      OPENFGA_DATASTORE_ENGINE: postgres
+      OPENFGA_DATASTORE_URI: postgres://postgres:password@openfga-postgres:5432/postgres?sslmode=disable
+      OPENFGA_DATASTORE_MAX_OPEN_CONNS: 100
+      OPENFGA_LOG_LEVEL: warn
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/grpc_health_probe", "-addr=openfga:8081"]
+      interval: 3s
+      timeout: 30s
+      retries: 10
+    ports:
+      - "8080:8080" # HTTP API
+    depends_on:
+      openfga-migrate:
+        condition: service_completed_successfully
+
+  openfga-import:
+    image: twogenidentity/openfga-import:${OPENFGA_CLI_VERSION}
+    pull_policy: build
+    build:
+      context: ./openfga
+      args:
+        OPENFGA_CLI_VERSION: ${OPENFGA_CLI_VERSION}
+    container_name: openfga-import
+    restart: "no"
+    environment:
+      FGA_API_URL: http://openfga:8080
+      FGA_STORE_NAME: keycloak
+    volumes:
+      - ./openfga/store.yaml:/openfga/store.yaml:ro
+      - ./openfga/model.dsl:/openfga/model.dsl:ro
+    depends_on:
+      openfga:
+        condition: service_healthy
+
   keycloak-postgres:
-    image: postgres:14
+    image: postgres:17-alpine
     container_name: keycloak-postgres
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD: password
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U keycloak" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5        
-    ports:
-      - 5433:5432
+      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      <<: *postgres-healthcheck
 
   keycloak:
-    image: quay.io/keycloak/keycloak:${KC_VERSION}
+    image: twogenidentity/keycloak-openfga:${KC_VERSION}-${OPENFGA_PUBLISHER_VERSION}
+    pull_policy: build
+    build:
+      context: ./keycloak
+      args:
+        KC_VERSION: ${KC_VERSION}
+        OPENFGA_PUBLISHER_VERSION: ${OPENFGA_PUBLISHER_VERSION}
     container_name: keycloak
-    command:
-      - start-dev
+    command: start-dev
     environment:
-      KEYCLOAK_USER: admin
-      KEYCLOAK_PASSWORD: password
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: password
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USER}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
+      KC_DB: postgres
       KC_DB_URL_HOST: keycloak-postgres
       KC_DB_URL_DATABASE: keycloak
-      KC_DB_SCHEMA: public
-      KC_HTTP_PORT: 8081
       KC_DB_USERNAME: keycloak
       KC_DB_PASSWORD: password
-      KC_HOSTNAME_STRICT: 'false'
-      KC_HTTP_ENABLED: 'true'
-      KC_HEALTH_ENABLED: 'true'
-      KC_HOSTNAME: keycloak
-      KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_PUBLISHER_API_URL: http://openfga:8080
-      KC_LOG_LEVEL: info,com.twogenidentity.keycloak:debug,com.twogenidentity.keycloak.utils:debug
+      KC_HTTP_PORT: 8081
+      KC_HOSTNAME: http://keycloak:8081
+      KC_HOSTNAME_STRICT: "false"
+      KC_HEALTH_ENABLED: "true"
+      KC_LOG_LEVEL: info,com.twogenidentity.keycloak:debug
+      # OpenFGA event publisher (https://github.com/embesozzi/keycloak-openfga-event-publisher#configuration)
+      KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_PUBLISHER_OPENFGA_API_URL: http://openfga:8080
+      KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_PUBLISHER_OPENFGA_STORE_NAME: keycloak
+      KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_PUBLISHER_OPENFGA_IDENTIFIER: name
+      KC_SPI_EVENTS_LISTENER_OPENFGA_EVENTS_PUBLISHER_OPENFGA_CREDENTIALS_METHOD: none
     healthcheck:
-      test: ["CMD", "/opt/keycloak/bin/kcadm.sh", "config", "credentials", "--server", "http://localhost:8081", "--realm", "master", "--user", "admin", "--password", "password"]
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"UP\"' <&3"]
       interval: 5s
-      timeout: 2s
-      retries: 15         
+      timeout: 5s
+      retries: 30
+      start_period: 10s
     ports:
-      - 8081:8081
-      - 8443:8443
-    volumes:
-      - $PWD/keycloak/lib/keycloak-openfga-event-publisher.jar:/opt/keycloak/providers/keycloak-openfga-event-publisher.jar
-      - $PWD/keycloak/import.sh:/opt/keycloak/import.sh
+      - "8081:8081"
     depends_on:
-      - keycloak-postgres
+      keycloak-postgres:
+        condition: service_healthy
+      openfga-import:
+        condition: service_completed_successfully
+
+  keycloak-import:
+    image: quay.io/keycloak/keycloak:${KC_VERSION}
+    container_name: keycloak-import
+    restart: "no"
+    entrypoint: ["/bin/bash", "/opt/keycloak/import.sh"]
+    environment:
+      KEYCLOAK_URL: http://keycloak:8081
+      KEYCLOAK_USER: ${KC_ADMIN_USER}
+      KEYCLOAK_PASSWORD: ${KC_ADMIN_PASSWORD}
+    volumes:
+      - ./keycloak/import.sh:/opt/keycloak/import.sh:ro
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
+  store:
+    build: ./store-oidc-app
+    image: twogenidentity/store-oidc-app
+    container_name: store-oidc-app
+    environment:
+      VUE_APP_OIDC_PROVIDER_DOMAIN: http://keycloak:8081/realms/master
+      VUE_APP_CLIENT_ID: portal
+      # Protection at the API gateway; for protection at the API, use http://store-openfga-api:9091/api/products
+      VUE_APP_API_URL: http://store-authz-gateway:9080/api/products
+    ports:
+      - "9090:8080"
+    depends_on:
+      keycloak-import:
+        condition: service_completed_successfully
+
+  store-openfga-api:
+    build: ./store-openfga-api
+    image: twogenidentity/store-openfga-api
+    container_name: store-openfga-api
+    environment:
+      OIDC_PROVIDER_DOMAIN: http://keycloak:8081/realms/master
+      OPENFGA_API_HOST: openfga:8080
+      OPENFGA_STORE_NAME: keycloak
+    ports:
+      - "9091:9091"
+    depends_on:
+      keycloak-import:
+        condition: service_completed_successfully
+
+  store-authz-gateway:
+    image: ghcr.io/embesozzi/apisix-authz-openfga:latest
+    container_name: store-authz-gateway
+    environment:
+      FGA_HOST: http://openfga:8080
+    volumes:
+      - ./store-authz-gateway/routes.yml:/usr/local/apisix/conf/apisix.yaml:ro
+      - ./store-authz-gateway/config.yml:/usr/local/apisix/conf/config.yaml:ro
+    ports:
+      - "9080:9080"
+    depends_on:
+      keycloak-import:
+        condition: service_completed_successfully
+      store-api:
+        condition: service_started
+
+  store-api:
+    build: ./store-api
+    image: ghcr.io/embesozzi/demo-store-api:1.0.0
+    container_name: store-api
