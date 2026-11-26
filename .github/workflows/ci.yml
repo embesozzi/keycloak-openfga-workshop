@@ -1,10 +1,19 @@
 name: CI
 
 # Starts the whole workshop and runs the end-to-end tests (make test)
+# Skipped when only docs change (README, BACKLOG, images)
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'doc/**'
+      - 'LICENSE'
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'doc/**'
+      - 'LICENSE'
   workflow_dispatch:
 
 permissions:
